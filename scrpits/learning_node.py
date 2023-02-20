@@ -1,9 +1,7 @@
 #! /usr/bin/env python
 
 import rclpy
-from time import time
-import datetime
-from time import sleep
+
 from datetime import datetime
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -110,14 +108,14 @@ class LearningNode(Node):
         self.reward_avg_per_episode = np.array([])
         self.ep_reward_arr = np.array([])
 
-        tmp_time = datetime.today()
-        time_str = tmp_time.strftime("%y%m%d_%H%M%S")
+        # tmp_time = datetime.today()
+        # time_str = tmp_time.strftime("%y%m%d_%H%M%S")
 
         self.logs_steps_per_episod_path = LOG_FILE_DIR+'/logs_steps_per_episode.csv'
-        self.staps_per_episode_path = LOG_FILE_DIR+f'/steps_per_episode-{time_str}.csv'
+        self.staps_per_episode_path = LOG_FILE_DIR+f'/steps_per_episode.csv'
 
         self.logs_reward_per_episode_path = LOG_FILE_DIR+'/logs_reward_per_episode.csv'
-        self.reward_per_episode_path = LOG_FILE_DIR+f'/reward_per_episode-{time_str}.csv'
+        self.reward_per_episode_path = LOG_FILE_DIR+f'/reward_per_episode.csv'
 
         self.q_table_path = LOG_FILE_DIR+'/Qtable.csv'
         self.state_space_path = LOG_FILE_DIR+'/StateSpace.csv'
