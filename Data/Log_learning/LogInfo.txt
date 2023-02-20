@@ -778,3 +778,609 @@ episode steps: 54
 episode reward: -112.56 
 episode max | avg | min reward: 1.30 | -2.12 | -101.55 
 T = 23.750000 
+
+---------------------------------------
+
+episode time: 9.00 s (avg step: 0.56 s) 
+episode steps: 16 
+episode reward: -103.18 
+episode max | avg | min reward: 1.14 | -6.88 | -100.11 
+T = 25.000000 
+
+---------------------------------------
+
+episode time: 6.61 s (avg step: 0.60 s) 
+episode steps: 11 
+episode reward: -101.43 
+episode max | avg | min reward: 1.02 | -10.14 | -100.71 
+T = 23.750000 
+
+---------------------------------------
+
+episode time: 7.01 s (avg step: 0.58 s) 
+episode steps: 12 
+episode reward: -100.28 
+episode max | avg | min reward: 1.02 | -9.12 | -100.70 
+T = 22.562500 
+
+---------------------------------------
+
+episode time: 11.41 s (avg step: 0.54 s) 
+episode steps: 21 
+episode reward: -100.23 
+episode max | avg | min reward: 1.27 | -5.01 | -100.94 
+T = 21.434375 
+
+---------------------------------------
+
+episode time: 10.01 s (avg step: 0.56 s) 
+episode steps: 18 
+episode reward: -103.21 
+episode max | avg | min reward: 0.99 | -6.07 | -101.00 
+T = 20.362656 
+
+---------------------------------------
+
+episode time: 6.61 s (avg step: 0.60 s) 
+episode steps: 11 
+episode reward: -101.77 
+episode max | avg | min reward: 0.20 | -10.18 | -100.70 
+T = 19.344523 
+
+---------------------------------------
+
+episode time: 10.41 s (avg step: 0.55 s) 
+episode steps: 19 
+episode reward: -105.51 
+episode max | avg | min reward: 1.03 | -5.86 | -98.99 
+T = 18.377297 
+
+---------------------------------------
+
+episode time: 12.01 s (avg step: 0.55 s) 
+episode steps: 22 
+episode reward: -92.58 
+episode max | avg | min reward: 1.17 | -4.41 | -101.14 
+T = 17.458432 
+
+---------------------------------------
+
+episode time: 14.02 s (avg step: 0.54 s) 
+episode steps: 26 
+episode reward: -84.82 
+episode max | avg | min reward: 2.01 | -3.39 | -101.03 
+T = 16.585511 
+
+---------------------------------------
+
+episode time: 8.02 s (avg step: 0.57 s) 
+episode steps: 14 
+episode reward: -100.82 
+episode max | avg | min reward: 0.95 | -7.76 | -99.54 
+T = 15.756235 
+
+---------------------------------------
+
+episode time: 8.42 s (avg step: 0.56 s) 
+episode steps: 15 
+episode reward: -101.66 
+episode max | avg | min reward: 0.99 | -7.26 | -99.59 
+T = 14.968423 
+
+---------------------------------------
+
+episode time: 8.02 s (avg step: 0.57 s) 
+episode steps: 14 
+episode reward: -102.88 
+episode max | avg | min reward: 0.46 | -7.91 | -99.54 
+T = 14.220002 
+
+---------------------------------------
+
+episode time: 7.03 s (avg step: 0.59 s) 
+episode steps: 12 
+episode reward: -103.46 
+episode max | avg | min reward: 0.97 | -9.41 | -100.66 
+T = 13.509002 
+
+---------------------------------------
+
+episode time: 6.63 s (avg step: 0.60 s) 
+episode steps: 11 
+episode reward: -101.85 
+episode max | avg | min reward: 0.17 | -10.18 | -100.68 
+T = 12.833552 
+
+---------------------------------------
+
+episode time: 7.44 s (avg step: 0.57 s) 
+episode steps: 13 
+episode reward: -100.88 
+episode max | avg | min reward: 1.03 | -8.41 | -100.83 
+T = 12.191874 
+
+---------------------------------------
+
+episode time: 10.06 s (avg step: 0.56 s) 
+episode steps: 18 
+episode reward: -106.63 
+episode max | avg | min reward: 1.03 | -6.27 | -100.91 
+T = 11.582281 
+
+---------------------------------------
+
+episode time: 7.85 s (avg step: 0.56 s) 
+episode steps: 14 
+episode reward: -99.59 
+episode max | avg | min reward: 1.21 | -7.66 | -101.16 
+T = 11.003167 
+
+---------------------------------------
+
+episode time: 8.05 s (avg step: 0.58 s) 
+episode steps: 14 
+episode reward: -101.91 
+episode max | avg | min reward: 0.99 | -7.84 | -100.72 
+T = 10.453008 
+
+---------------------------------------
+
+episode time: 11.50 s (avg step: 0.55 s) 
+episode steps: 21 
+episode reward: -104.04 
+episode max | avg | min reward: 0.98 | -5.20 | -99.64 
+T = 9.930358 
+
+---------------------------------------
+
+episode time: 13.14 s (avg step: 0.55 s) 
+episode steps: 24 
+episode reward: -103.53 
+episode max | avg | min reward: 1.08 | -4.50 | -101.11 
+T = 9.433840 
+
+---------------------------------------
+
+episode time: 54.54 s (avg step: 0.51 s) 
+episode steps: 107 
+episode reward: -39.18 
+episode max | avg | min reward: 2.01 | -0.37 | -100.83 
+T = 8.962148 
+
+---------------------------------------
+
+episode time: 11.98 s (avg step: 0.54 s) 
+episode steps: 22 
+episode reward: -99.63 
+episode max | avg | min reward: 1.23 | -4.74 | -99.69 
+T = 8.514041 
+
+---------------------------------------
+
+episode time: 23.60 s (avg step: 0.52 s) 
+episode steps: 45 
+episode reward: -103.42 
+episode max | avg | min reward: 1.20 | -2.35 | -100.87 
+T = 25.000000 
+
+---------------------------------------
+
+episode time: 46.47 s (avg step: 0.51 s) 
+episode steps: 91 
+episode reward: -16.63 
+episode max | avg | min reward: 2.01 | -0.18 | -101.02 
+T = 23.750000 
+
+---------------------------------------
+
+episode time: 74.67 s (avg step: 0.51 s) 
+episode steps: 147 
+episode reward: -103.06 
+episode max | avg | min reward: 1.37 | -0.71 | -100.92 
+T = 22.562500 
+
+---------------------------------------
+
+episode time: 27.88 s (avg step: 0.52 s) 
+episode steps: 54 
+episode reward: -112.44 
+episode max | avg | min reward: 1.04 | -2.12 | -100.65 
+T = 21.434375 
+
+---------------------------------------
+
+episode time: 12.54 s (avg step: 0.55 s) 
+episode steps: 23 
+episode reward: -101.64 
+episode max | avg | min reward: 1.04 | -4.62 | -100.59 
+T = 20.362656 
+
+---------------------------------------
+
+episode time: 22.98 s (avg step: 0.52 s) 
+episode steps: 44 
+episode reward: -111.27 
+episode max | avg | min reward: 1.99 | -2.59 | -100.00 
+T = 19.344523 
+
+---------------------------------------
+
+episode time: 47.10 s (avg step: 0.51 s) 
+episode steps: 92 
+episode reward: -132.45 
+episode max | avg | min reward: 1.01 | -1.46 | -100.65 
+T = 18.377297 
+
+---------------------------------------
+
+episode time: 12.99 s (avg step: 0.54 s) 
+episode steps: 24 
+episode reward: -100.04 
+episode max | avg | min reward: 1.18 | -4.35 | -98.84 
+T = 25.000000 
+
+---------------------------------------
+
+episode time: 139.20 s (avg step: 0.50 s) 
+episode steps: 276 
+episode reward: -213.00 
+episode max | avg | min reward: 2.14 | -0.77 | -97.73 
+T = 23.750000 
+
+---------------------------------------
+
+episode time: 27.08 s (avg step: 0.52 s) 
+episode steps: 52 
+episode reward: -118.23 
+episode max | avg | min reward: 2.07 | -2.32 | -100.04 
+T = 22.562500 
+
+---------------------------------------
+
+episode time: 29.48 s (avg step: 0.52 s) 
+episode steps: 57 
+episode reward: -98.69 
+episode max | avg | min reward: 2.33 | -1.76 | -99.77 
+T = 21.434375 
+
+---------------------------------------
+
+episode time: 67.03 s (avg step: 0.51 s) 
+episode steps: 132 
+episode reward: -168.68 
+episode max | avg | min reward: 0.97 | -1.29 | -99.82 
+T = 20.362656 
+
+---------------------------------------
+
+episode time: 39.64 s (avg step: 0.52 s) 
+episode steps: 76 
+episode reward: -128.31 
+episode max | avg | min reward: 1.84 | -1.71 | -100.90 
+T = 19.344523 
+
+---------------------------------------
+
+episode time: 30.61 s (avg step: 0.52 s) 
+episode steps: 59 
+episode reward: -118.65 
+episode max | avg | min reward: 1.86 | -2.05 | -101.46 
+T = 25.000000 
+
+---------------------------------------
+
+episode time: 13.41 s (avg step: 0.54 s) 
+episode steps: 25 
+episode reward: -94.52 
+episode max | avg | min reward: 2.29 | -3.94 | -99.72 
+T = 23.750000 
+
+---------------------------------------
+
+episode time: 47.05 s (avg step: 0.51 s) 
+episode steps: 92 
+episode reward: -143.24 
+episode max | avg | min reward: 1.90 | -1.57 | -101.33 
+T = 22.562500 
+
+---------------------------------------
+
+episode time: 17.05 s (avg step: 0.53 s) 
+episode steps: 32 
+episode reward: -71.80 
+episode max | avg | min reward: 2.12 | -2.32 | -100.17 
+T = 21.434375 
+
+---------------------------------------
+
+episode time: 13.05 s (avg step: 0.54 s) 
+episode steps: 24 
+episode reward: -100.95 
+episode max | avg | min reward: 1.01 | -4.39 | -99.78 
+T = 20.362656 
+
+---------------------------------------
+
+episode time: 9.45 s (avg step: 0.56 s) 
+episode steps: 17 
+episode reward: -99.78 
+episode max | avg | min reward: 1.03 | -6.24 | -99.63 
+T = 19.344523 
+
+---------------------------------------
+
+episode time: 45.56 s (avg step: 0.51 s) 
+episode steps: 89 
+episode reward: -105.05 
+episode max | avg | min reward: 1.97 | -1.19 | -98.17 
+T = 18.377297 
+
+---------------------------------------
+
+episode time: 51.49 s (avg step: 0.51 s) 
+episode steps: 101 
+episode reward: -132.87 
+episode max | avg | min reward: 1.85 | -1.33 | -100.23 
+T = 17.458432 
+
+---------------------------------------
+
+episode time: 45.56 s (avg step: 0.51 s) 
+episode steps: 89 
+episode reward: -136.11 
+episode max | avg | min reward: 1.11 | -1.55 | -100.18 
+T = 16.585511 
+
+---------------------------------------
+
+episode time: 31.01 s (avg step: 0.52 s) 
+episode steps: 60 
+episode reward: -108.86 
+episode max | avg | min reward: 1.02 | -1.85 | -99.18 
+T = 15.756235 
+
+---------------------------------------
+
+episode time: 44.76 s (avg step: 0.51 s) 
+episode steps: 87 
+episode reward: -121.52 
+episode max | avg | min reward: 1.94 | -1.41 | -99.72 
+T = 14.968423 
+
+---------------------------------------
+
+episode time: 40.06 s (avg step: 0.51 s) 
+episode steps: 78 
+episode reward: -132.97 
+episode max | avg | min reward: 1.03 | -1.73 | -100.05 
+T = 14.220002 
+
+---------------------------------------
+
+episode time: 47.85 s (avg step: 0.53 s) 
+episode steps: 90 
+episode reward: -129.77 
+episode max | avg | min reward: 1.00 | -1.46 | -98.58 
+T = 13.509002 
+
+---------------------------------------
+
+episode time: 9.63 s (avg step: 0.69 s) 
+episode steps: 14 
+episode reward: -100.98 
+episode max | avg | min reward: 0.71 | -7.77 | -99.59 
+T = 12.833552 
+
+---------------------------------------
+
+episode time: 32.77 s (avg step: 0.63 s) 
+episode steps: 52 
+episode reward: -101.99 
+episode max | avg | min reward: 2.08 | -2.00 | -101.34 
+T = 12.191874 
+
+---------------------------------------
+
+episode time: 2.67 s (avg step: 1.33 s) 
+episode steps: 2 
+episode reward: -100.26 
+episode max | avg | min reward: -100.26 | -100.26 | -100.26 
+T = 11.582281 
+
+---------------------------------------
+
+episode time: 9.10 s (avg step: 0.76 s) 
+episode steps: 12 
+episode reward: -99.01 
+episode max | avg | min reward: 2.02 | -9.00 | -101.19 
+T = 11.003167 
+
+---------------------------------------
+
+episode time: 16.64 s (avg step: 0.72 s) 
+episode steps: 23 
+episode reward: -94.78 
+episode max | avg | min reward: 2.08 | -4.31 | -101.22 
+T = 10.453008 
+
+---------------------------------------
+
+episode time: 39.58 s (avg step: 0.72 s) 
+episode steps: 55 
+episode reward: -90.30 
+episode max | avg | min reward: 2.41 | -1.67 | -101.48 
+T = 9.930358 
+
+---------------------------------------
+
+episode time: 10.66 s (avg step: 0.82 s) 
+episode steps: 13 
+episode reward: -93.40 
+episode max | avg | min reward: 2.02 | -7.78 | -100.27 
+T = 9.433840 
+
+---------------------------------------
+
+episode time: 3.04 s (avg step: 1.52 s) 
+episode steps: 2 
+episode reward: -98.80 
+episode max | avg | min reward: -98.80 | -98.80 | -98.80 
+T = 8.962148 
+
+---------------------------------------
+
+episode time: 2.98 s (avg step: 1.49 s) 
+episode steps: 2 
+episode reward: -100.31 
+episode max | avg | min reward: -100.31 | -100.31 | -100.31 
+T = 8.514041 
+
+---------------------------------------
+
+episode time: 18.54 s (avg step: 0.77 s) 
+episode steps: 24 
+episode reward: -81.12 
+episode max | avg | min reward: 2.30 | -3.53 | -99.00 
+T = 8.088339 
+
+---------------------------------------
+
+episode time: 3.03 s (avg step: 1.52 s) 
+episode steps: 2 
+episode reward: -99.31 
+episode max | avg | min reward: -99.31 | -99.31 | -99.31 
+T = 7.683922 
+
+---------------------------------------
+
+episode time: 3.01 s (avg step: 1.50 s) 
+episode steps: 2 
+episode reward: -97.74 
+episode max | avg | min reward: -97.74 | -97.74 | -97.74 
+T = 7.299726 
+
+---------------------------------------
+
+episode time: 10.97 s (avg step: 0.84 s) 
+episode steps: 13 
+episode reward: -100.04 
+episode max | avg | min reward: 1.99 | -8.34 | -100.28 
+T = 6.934739 
+
+---------------------------------------
+
+episode time: 15.85 s (avg step: 0.79 s) 
+episode steps: 20 
+episode reward: -97.76 
+episode max | avg | min reward: 2.99 | -5.15 | -101.20 
+T = 6.588002 
+
+---------------------------------------
+
+episode time: 3.05 s (avg step: 1.53 s) 
+episode steps: 2 
+episode reward: -99.89 
+episode max | avg | min reward: -99.89 | -99.89 | -99.89 
+T = 6.258602 
+
+---------------------------------------
+
+episode time: 3.10 s (avg step: 1.55 s) 
+episode steps: 2 
+episode reward: -100.20 
+episode max | avg | min reward: -100.20 | -100.20 | -100.20 
+T = 5.945672 
+
+---------------------------------------
+
+episode time: 14.77 s (avg step: 0.82 s) 
+episode steps: 18 
+episode reward: -97.91 
+episode max | avg | min reward: 1.02 | -5.76 | -101.28 
+T = 5.648389 
+
+---------------------------------------
+
+episode time: 3.33 s (avg step: 1.66 s) 
+episode steps: 2 
+episode reward: -98.77 
+episode max | avg | min reward: -98.77 | -98.77 | -98.77 
+T = 5.365969 
+
+---------------------------------------
+
+episode time: 3.30 s (avg step: 1.65 s) 
+episode steps: 2 
+episode reward: -98.06 
+episode max | avg | min reward: -98.06 | -98.06 | -98.06 
+T = 5.097671 
+
+---------------------------------------
+
+episode time: 3.14 s (avg step: 1.57 s) 
+episode steps: 2 
+episode reward: -101.40 
+episode max | avg | min reward: -101.40 | -101.40 | -101.40 
+T = 4.842787 
+
+---------------------------------------
+
+episode time: 58.38 s (avg step: 0.80 s) 
+episode steps: 73 
+episode reward: -64.13 
+episode max | avg | min reward: 2.39 | -0.89 | -101.45 
+T = 4.600648 
+
+---------------------------------------
+
+episode time: 3.30 s (avg step: 1.65 s) 
+episode steps: 2 
+episode reward: -100.46 
+episode max | avg | min reward: -100.46 | -100.46 | -100.46 
+T = 4.370615 
+
+---------------------------------------
+
+episode time: 12.23 s (avg step: 0.94 s) 
+episode steps: 13 
+episode reward: -98.53 
+episode max | avg | min reward: 2.01 | -8.21 | -101.46 
+T = 4.152085 
+
+---------------------------------------
+
+episode time: 3.40 s (avg step: 1.70 s) 
+episode steps: 2 
+episode reward: -100.47 
+episode max | avg | min reward: -100.47 | -100.47 | -100.47 
+T = 3.944480 
+
+---------------------------------------
+
+episode time: 23.54 s (avg step: 0.87 s) 
+episode steps: 27 
+episode reward: -92.99 
+episode max | avg | min reward: 2.02 | -3.58 | -101.33 
+T = 3.747256 
+
+---------------------------------------
+
+episode time: 3.45 s (avg step: 1.72 s) 
+episode steps: 2 
+episode reward: -98.13 
+episode max | avg | min reward: -98.13 | -98.13 | -98.13 
+T = 3.559894 
+
+---------------------------------------
+
+episode time: 3.15 s (avg step: 1.58 s) 
+episode steps: 2 
+episode reward: -97.86 
+episode max | avg | min reward: -97.86 | -97.86 | -97.86 
+T = 3.381899 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(40), LEARNING FINISHED
+Simulation time: 0:12:35  h/m/s 
+

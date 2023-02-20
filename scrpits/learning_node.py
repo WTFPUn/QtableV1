@@ -546,7 +546,7 @@ class LearningNode(Node):
                             ( self.action, status_strat ) = epsiloGreedyExploration(self.Q_table, state_ind, self.actions, self.EPSILON)
 
                         status_rda = robotDoAction(self.velPub, self.action)
-                        print("Action: ", self.action)
+                        print("Action: ", ACTIONS_DESCRIPTION[self.action[0]])
                         if not status_uqt == 'updateQTable => OK':
                             print('\r\n', status_uqt, '\r\n')
                             self.log_sim_info.write('\r\n'+status_uqt+'\r\n')

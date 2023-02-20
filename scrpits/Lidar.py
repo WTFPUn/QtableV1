@@ -64,16 +64,16 @@ def scanDiscretization(state_space, lidar, target_pos, robot_pose, robot_prev_po
     # lidar_x1 = min(lidar[81: 90])
     lidar_x1 = min(lidar[round(ratio*(ANGLE_MIN + HORIZON_WIDTH[1] + HORIZON_WIDTH[2])): round(ratio*(ANGLE_MIN + HORIZON_WIDTH[1] + HORIZON_WIDTH[2] + HORIZON_WIDTH[3])) ])
     if ZONE_0_LENGTH <= lidar_x1 <= ZONE_1_LENGTH:
-        x1 = 1
-    else: 
         x1 = 0
+    else: 
+        x1 = 1
 
     # lidar_x8 = min(lidar[270: 279])
     lidar_x7 = min(lidar[round(ratio*(ANGLE_MAX - HORIZON_WIDTH[1] - HORIZON_WIDTH[2] - HORIZON_WIDTH[3])):round(ratio*(ANGLE_MAX - HORIZON_WIDTH[1] - HORIZON_WIDTH[2])) ])
     if ZONE_0_LENGTH <= lidar_x7 <= ZONE_1_LENGTH:
-        x7 = 1
-    else: 
         x7 = 0
+    else: 
+        x7 = 1
 
     ###############################################################################
     ##HORIZON_WIDTH[2] --> 65 degree(25 to 90) :x2, x7

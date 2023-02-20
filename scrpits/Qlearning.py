@@ -189,7 +189,7 @@ def getReward(  action,
         
     # action and prev_action is same and action is left or right
     if (prev_action == 1 and action == 2) or (prev_action == 2 and action == 1):
-            reward += -.2
+        reward += -.2
 
     #repeat stop penelty
     # if prev_action == 2 and action == 2:
@@ -215,6 +215,12 @@ def getReward(  action,
 
     elif angle_state == 3:
         reward += 0.01
+
+    # if add reward forward or super forward
+    if action == 0 or action == 3:
+        reward += 1
+    else :
+        reward += -.3
 
     # calculate distance reward
     # reward +=  3* (np.exp(-dist) - np.exp(-max_radius)) / (1 - np.exp(-max_radius))
