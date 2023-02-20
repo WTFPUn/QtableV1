@@ -81,9 +81,10 @@ GOAL_RADIUS = .1
 
 # edit when chang order in def roboDoAction in Control.py  *****
 ACTIONS_DESCRIPTION = { 0 : 'Forward',
-                        1 : 'CW',
-                        2 : 'CCW',
-                        3 : 'SuperForward'}
+                        1 : 'TurnLeft',
+                        2 : 'TurnRight',
+                        3 : 'SuperForward'
+                        }
 MAX_WIDTH = 25
 
 parser = argparse.ArgumentParser(description='Qtable V1 ~~Branch: welcomeToV2')

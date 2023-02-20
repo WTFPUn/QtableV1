@@ -62,7 +62,7 @@ def createVelMsg(v,w):
 
 # Go forward command
 def robotGoForward(velPub):
-    velMsg = createVelMsg(CONST_LINEAR_SPEED_FORWARD,CONST_ANGULAR_SPEED_FORWARD)
+    velMsg = createVelMsg(1*CONST_LINEAR_SPEED_FORWARD,CONST_ANGULAR_SPEED_FORWARD)
     velPub.publish(velMsg)
 
 # Go 2 x forward command
