@@ -50,8 +50,7 @@ def scanDiscretization(state_space, lidar, target_pos, robot_pose, robot_prev_po
     x4 = 2
     x5 = 2 
     x6 = 1
-    x7 = 1
-    
+    x7 = 1 
     x8 = 2
     x9 = 1
 
@@ -183,20 +182,20 @@ def checkCrash(lidar):
         return False
 
 # Check - object nearby
-# def checkObjectNearby(lidar):
-#     # lidar_horizon = np.concatenate((lidar[(ANGLE_MIN + sum(HORIZON_WIDTH)):(ANGLE_MIN):-1],lidar[(ANGLE_MAX):(ANGLE_MAX - sum(HORIZON_WIDTH)):-1]))
-#     # W = np.linspace(1.56, 1, len(lidar_horizon) // 2)
-#     # W = np.append(W, np.linspace(1, 1.56, len(lidar_horizon) // 2))
-#     # if np.min( W * lidar_horizon ) < NEARBY_DISTANCE:
-#     if np.min(lidar) < NEARBY_DISTANCE:
-#         return True
-#     else:
-#         return False
+def checkObjectNearby(lidar):
+    lidar_horizon = np.concatenate((lidar[(ANGLE_MIN + sum(HORIZON_WIDTH)):(ANGLE_MIN):-1],lidar[(ANGLE_MAX):(ANGLE_MAX - sum(HORIZON_WIDTH)):-1]))
+    W = np.linspace(1.56, 1, len(lidar_horizon) // 2)
+    W = np.append(W, np.linspace(1, 1.56, len(lidar_horizon) // 2))
+    if np.min( W * lidar_horizon ) < NEARBY_DISTANCE:
+        if np.min(lidar) < NEARBY_DISTANCE:
+            return True
+        else:
+            return False
 
 # Check - goal near
-# def checkGoalNear(x, y, x_goal, y_goal):
-#     ro = sqrt( pow( ( x_goal - x ) , 2 ) + pow( ( y_goal - y ) , 2) )
-#     if ro < 0.3:
-#         return True
-#     else:
-#         return False
+def checkGoalNear(x, y, x_goal, y_goal):
+    ro = sqrt( pow( ( x_goal - x ) , 2 ) + pow( ( y_goal - y ) , 2) )
+    if ro < 0.3:
+        return True
+    else:
+        return False
