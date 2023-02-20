@@ -55,8 +55,8 @@ EPSILON_MIN = 0.05
 EXPLORATION_FUNCTION = 1
 
 # Initial position
-# X_INIT = -2.0
-# Y_INIT = -0.0
+X_INIT = -2.0
+Y_INIT = -0.0
 THETA_INIT = 0.0
 
 RANDOM_INIT_POS = False
@@ -72,19 +72,18 @@ RADIUS_REDUCE_RATE = .5
 REWARD_THRESHOLD =  -200
 CUMULATIVE_REWARD = 0.0
 
-GOAL_POSITION = (0., 2., .0)
+GOAL_POSITION = (2., 2., .0)
 R = [-2,-1,1,2]
 
-GOAL_X = 0
-GOAL_Y = 0
+GOAL_X = 2
+GOAL_Y = 2
 GOAL_RADIUS = .1
 
 # edit when chang order in def roboDoAction in Control.py  *****
 ACTIONS_DESCRIPTION = { 0 : 'Forward',
                         1 : 'CW',
                         2 : 'CCW',
-                        3 : 'Stop',
-                        4 : 'SuperForward'}
+                        3 : 'SuperForward'}
 MAX_WIDTH = 25
 
 parser = argparse.ArgumentParser(description='Qtable V1 ~~Branch: welcomeToV2')
@@ -436,7 +435,6 @@ class LearningNode(Node):
                             print((self.GOAL_X, self.GOAL_Y))
                         else:
                             (self.GOAL_X, self.GOAL_Y, GOAL_THETA) = tuple(args_parse.GOAL_POSITION)
-                        self.save_info_csv()
                         
                     
                     self.episode = self.episode + 1
@@ -481,7 +479,7 @@ class LearningNode(Node):
                         ( lidar, angles ) = lidarScan(msgScan)                              #just added
                         
 
-                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9, x10 ) = scanDiscretization(self.state_space, lidar, (self.GOAL_X, self.GOAL_Y), (current_x, current_y),self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
+                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9 ) = scanDiscretization(self.state_space, lidar, (self.GOAL_X, self.GOAL_Y), (current_x, current_y),self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
                         self.crash = checkCrash(lidar)
 
                         if args_parse.exploration_func == 1 :
@@ -517,7 +515,7 @@ class LearningNode(Node):
                         yaw = getRotation(odomMsg)
 
 
-                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9, x10 ) = scanDiscretization(self.state_space, lidar, (self.GOAL_X, self.GOAL_Y), (current_x, current_y),self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
+                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9 ) = scanDiscretization(self.state_space, lidar, (self.GOAL_X, self.GOAL_Y), (current_x, current_y),self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
                         self.crash = checkCrash(lidar)
                         
                         # radius caculated by norm of  and goal position
@@ -530,12 +528,12 @@ class LearningNode(Node):
                                                                      (self.GOAL_X, self.GOAL_Y), 
                                                                     self.MAX_RADIUS, args_parse.radiaus_reduce_rate, ep_time ,
                                                                     self.get_clock().now().nanoseconds, 
-                                                                    args_parse.GOAL_RADIUS, x10, self.WIN_COUNT)
+                                                                    args_parse.GOAL_RADIUS, x9, self.WIN_COUNT)
                         
                         self.CUMULATIVE_REWARD += reward
                         self.WIN_COUNT = win_count
                         print(f' CUMULATIVE_REWARD: {self.CUMULATIVE_REWARD}')
-                        print(f' WIN_COUNT: {self.WIN_COUNT}')
+                        # print(f' WIN_COUNT: {self.WIN_COUNT}')
                         # print("time: ", self.get_clock().now().nanoseconds)
                         ( self.Q_table, status_uqt ) = updateQTable(self.Q_table, self.prev_state_ind, self.action, reward, state_ind, self.alpha, self.gamma)
 

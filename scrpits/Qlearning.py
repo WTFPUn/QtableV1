@@ -7,7 +7,7 @@ from itertools import product
 from sensor_msgs.msg import LaserScan
 import time
 
-STATE_SPACE_IND_MAX = 27648 - 1
+STATE_SPACE_IND_MAX = 5184 - 1
 STATE_SPACE_IND_MIN = 1 - 1
 ACTIONS_IND_MAX = 7
 ACTIONS_IND_MIN = 0
@@ -31,14 +31,13 @@ def createStateSpace():
     x1 = set((0,1))
     x2 = set((0,1))
     x3 = set((0,1,2))
-    x4 = set((0,1,2,3))
-    x5 = set((0,1,2,3))
-    x6 = set((0,1,2))
+    x4 = set((0,1,2))
+    x5 = set((0,1,2))
+    x6 = set((0,1))
     x7 = set((0,1))
-    x8 = set((0,1))
-    x9 = set((0,1,2))
-    x10 = set((0,1,2,3))
-    state_space = set(product(x1,x2,x3,x4,x5,x6,x7,x8,x9,x10))
+    x8 = set((0,1,2))
+    x9 = set((0,1,2,3))
+    state_space = set(product(x1,x2,x3,x4,x5,x6,x7,x8,x9))
     return np.array(list(state_space))
 
 # Create Q table, dim: n_states x n_actions
@@ -244,3 +243,4 @@ def updateQTable(Q_table, state_ind, action, reward, next_state_ind, alpha, gamm
     else:
         status = 'updateQTable => INVALID STATE INDEX'
     return ( Q_table, status )
+
