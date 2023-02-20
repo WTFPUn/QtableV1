@@ -188,10 +188,10 @@ def checkObjectNearby(lidar):
     W = np.linspace(1.56, 1, len(lidar_horizon) // 2)
     W = np.append(W, np.linspace(1, 1.56, len(lidar_horizon) // 2))
     if np.min( W * lidar_horizon ) < NEARBY_DISTANCE:
-    if np.min(lidar) < NEARBY_DISTANCE:
-        return True
-    else:
-        return False
+        if np.min(lidar) < NEARBY_DISTANCE:
+            return True
+        else:
+            return False
 
 # Check - goal near
 def checkGoalNear(x, y, x_goal, y_goal):
