@@ -30,6 +30,15 @@ from rclpy.node import Node
 from rclpy.signals import SignalHandlerGuardCondition
 from rclpy.utilities import timeout_sec_to_nsec
 
+import argparse
+
+# Add args
+parser = argparse.ArgumentParser(description='control node')
+# Add gpos 
+parser.add_argument('--gpos', default = (0.0, 0.0), nargs=2, type=float, help='Enter x.x y.y pos for goal position')
+
+args = parser.parse_args()
+
 # Real robot
 REAL_ROBOT = True
 
@@ -51,8 +60,8 @@ if REAL_ROBOT:
     X_INIT = 0.0
     Y_INIT = 0.0
     THETA_INIT = 0.0
-    X_GOAL = 1.7
-    Y_GOAL = 1.1
+    X_GOAL = args.gpos[0]
+    Y_GOAL = args.gpos[1]
     THETA_GOAL = 90
 else:
     RANDOM_INIT_POS = False
@@ -178,6 +187,11 @@ class ControlNode(Node):
                         print('theta = %.2f [degrees]' % theta)
                         print('')
                         sleep(1)
+                        print('\r\nGoal position:')
+                        print('x = %.2f [m]' % X_GOAL)
+                        print('y = %.2f [m]' % Y_GOAL)
+                        print('')
+                        input('Press Enter to start...')
                     else:
                         self.robot_in_pos = False
             else:
