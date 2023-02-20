@@ -9,6 +9,16 @@ from std_msgs.msg import String
 
 from geometry_msgs.msg import Twist
 
+import argparse
+
+# Add args
+parser = argparse.ArgumentParser(description='control node')
+# Add gpos 
+parser.add_argument('--gpos', default = (0.0, 0.0), nargs=2, type=float, help='Enter x.x y.y pos for goal position')
+
+args = parser.parse_args()
+
+
 import sys
 cwd = os.getcwd()
 print(cwd)
@@ -51,10 +61,9 @@ if REAL_ROBOT:
     X_INIT = 0.0
     Y_INIT = 0.0
     THETA_INIT = 0.0
-    X_GOAL = 1.7
-    Y_GOAL = 1.1
+    X_GOAL = args.gpos[0]
+    Y_GOAL = args.gpos[1]
     THETA_GOAL = 90
-
     GOAL_RADIUS = 0.1
 else:
     RANDOM_INIT_POS = False
@@ -162,6 +171,11 @@ class ControlNode(Node):
                     print('y = %.2f [m]' % y)
                     print('theta = %.2f [degrees]' % theta)
                     print('')
+                    print('\r\nGoal position:')
+                    print('x = %.2f [m]' % X_GOAL)
+                    print('y = %.2f [m]' % Y_GOAL)
+                    print('')
+                    input('Press Enter to start nong...')
                 else:
                     if RANDOM_INIT_POS:
                         ( x_init , y_init , theta_init ) = robotSetRandomPos(self.setPosPub)
