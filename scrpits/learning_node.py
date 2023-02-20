@@ -144,7 +144,7 @@ class LearningNode(Node):
             print(f'{arg:<{MAX_WIDTH}}: {str(getattr(args_parse, arg)):<{MAX_WIDTH}}')
 
         print('-'*100)
-        print(f'\n state_space shape:  {self.state_space.shape[0]}')
+        print(f'\n state_space shape:  {self.state_space.shape[0]}, {self.state_space.shape[1]}')
         print(f'\n n_actions: {args_parse.n_actions_enable} --> {[ACTIONS_DESCRIPTION[i] for i in range(args_parse.n_actions_enable)]}')
 
 
