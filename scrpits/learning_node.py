@@ -2,18 +2,18 @@
 
 import rclpy
 from time import time
+import datetime
 from time import sleep
-# import time
 from datetime import datetime
 import matplotlib.pyplot as plt
+import pandas as pd
 from rclpy.node import Node
 from std_srvs.srv import Empty
-import pandas as pd
 from std_srvs.srv._empty import Empty_Request
 import sys
+import os
 DATA_PATH = '/mnt/c/Users/keera/Documents/Github/Basic_robot/QtableV1/Data'
 MODULES_PATH = '/mnt/c/Users/keera/Documents/Github/Basic_robot/QtableV1/scrpits'
-
 sys.path.insert(0, MODULES_PATH)
 from gazebo_msgs.msg._model_state import ModelState
 from geometry_msgs.msg import Twist
@@ -26,12 +26,8 @@ from rclpy.node import Node
 from rclpy.signals import SignalHandlerGuardCondition
 from rclpy.utilities import timeout_sec_to_nsec
 
-
-
-import argparse
-import os
 # Episode parameters
-MAX_EPISODES = 10
+MAX_EPISODES = 500
 MAX_STEPS_PER_EPISODE = 500
 MIN_TIME_BETWEEN_ACTIONS = 0.0
 MAX_EPISODES_BEFORE_SAVE = 5
@@ -44,7 +40,7 @@ T_INIT = 25
 T_GRAD = 0.95
 T_MIN = 0.001
 
-EPSILON_INIT = 0.5
+EPSILON_INIT = 0.9
 EPSILON_GRAD = 0.96
 EPSILON_MIN = 0.05
 
@@ -52,78 +48,27 @@ EPSILON_MIN = 0.05
 EXPLORATION_FUNCTION = 1
 
 # Initial position
-# X_INIT = -2.0
-# Y_INIT = -0.0
+X_INIT = -2.0
+Y_INIT = -0.5
 THETA_INIT = 0.0
 
 RANDOM_INIT_POS = False
 
 # Log file directory
-LOG_FILE_DIR = DATA_PATH + '/Log_learning'
+LOG_FILE_DIR = DATA_PATH + '/Log_learning_CUSTOM'
 
 # Q table source file
-Q_SOURCE_DIR = LOG_FILE_DIR + '/Qtable.csv'
-Q_BEST_SOURCE_DIR = LOG_FILE_DIR + '/Qtable_best_time.csv'
+Q_SOURCE_DIR = '/mnt/c/Users/keera/Documents/Github/Basic_robot/QtableV1/Data/Log_learning_CUSTOM/Qtable.csv'
+# change to True to use existing q table
+USE_EXIST_Q = True
 
-RADIUS_REDUCE_RATE = .5
-REWARD_THRESHOLD =  -200
+RADIUS_REDUCE_RATE = .1
+REWARD_THRESHOLD =  -200.0
 CUMULATIVE_REWARD = 0.0
 
-GOAL_POSITION = (0., 2., .0)
-R = [-2,-1,1,2]
-
-GOAL_X = 0
-GOAL_Y = 0
-GOAL_RADIUS = .1
-
-# edit when chang order in def roboDoAction in Control.py  *****
-ACTIONS_DESCRIPTION = { 0 : 'Forward',
-                        1 : 'CW',
-                        2 : 'CCW',
-                        3 : 'Stop',
-                        4 : 'SuperForward'}
-MAX_WIDTH = 25
-
-parser = argparse.ArgumentParser(description='Qtable V1 ~~Branch: welcomeToV2')
-# Log file directory
-parser.add_argument('--log_file_dir', default = LOG_FILE_DIR, type=str, help='/Data/Log_learning')
-# Q table source file
-parser.add_argument('--Q_source_dir', default = Q_SOURCE_DIR, type=str, help='/Data/Log_learning/Qtable.csv')
-# Q table best source file
-# parser.add_argument('--Q_best_source_dir', default = Q_BEST_SOURCE_DIR, type=str, help='/Data/Log_learning/Qtable_best_time.csv')
-
-# Episode parameters
-parser.add_argument('--max_episodes', default=MAX_EPISODES, type=int, help="MAX_EPISODES = 10 (default)", dest="max_episodes")
-parser.add_argument('--max_step_per_episodes', default=MAX_STEPS_PER_EPISODE, type=int, help="MAX_STEPS_PER_EPISODE = 500 (default)")
-parser.add_argument('--max_episodes_before_save', default=MAX_EPISODES_BEFORE_SAVE, type=int, help="MAX_EPISODES_BEFORE_SAVE = 5 (default)")
-
-# Learning parameters
-parser.add_argument('--exploration_func', default=1, type=int, choices=[1, 2], help="# 1 - Softmax(default) , 2 - Epsilon greedy")
-
-# need to use action='store true' to store boolean. True when type --resume. False otherwise
-# parser.add_argument('--get_best', action='store_true', help ="save Qtable_best  when minimize rel_time --> True | False")
-parser.add_argument('--resume', action='store_true', help ="continue learning with same Qtable--> True | False")
-parser.add_argument('--n_actions_enable', default=5, type=int, help='default--> 0:forward, 1:CW, 2:CCW, 3:stop, 4:superForward')
-
-parser.add_argument('--radiaus_reduce_rate', default=RADIUS_REDUCE_RATE, type=float)
-parser.add_argument('--reward_threshold', default=REWARD_THRESHOLD, type=int)
-parser.add_argument('--GOAL_POSITION', default=GOAL_POSITION, nargs='+', type=float)
-parser.add_argument('--GOAL_RADIUS', default=GOAL_RADIUS, type=float)
-parser.add_argument('--RANDOM_GOAL', default=0, type=int, dest="RANDOM_GOAL")
-
-
-args_parse = parser.parse_args()
-is_rand = args_parse.RANDOM_GOAL
-if is_rand:
-    (GOAL_X, GOAL_Y) = np.random.choice(R,2)
-    GOAL_THETA = 0
-    print((GOAL_X, GOAL_Y))
-else:
-    (GOAL_X, GOAL_Y, GOAL_THETA) = tuple(args_parse.GOAL_POSITION)
-
-WIN_COUNT = 0.0
-
-
+GOAL_POSITION = (.03, 1.9777, .0)
+(GOAL_X, GOAL_Y, GOAL_THETA) = GOAL_POSITION
+GOAL_RADIUS = .06
 class LearningNode(Node):
     def __init__(self):
         super().__init__('learning_node')
@@ -134,39 +79,22 @@ class LearningNode(Node):
         self.velPub = self.create_publisher(Twist, 'cmd_vel', 10)
         self.dummy_req = Empty_Request()
         self.reset.call_async(self.dummy_req)
-        self.actions = createActions(args_parse.n_actions_enable)
+        self.actions = createActions()
         self.state_space = createStateSpace()
-        self.GOAL_X = GOAL_X
-        self.GOAL_Y = GOAL_Y
-        print(f'\n {"start learning_node with":^{MAX_WIDTH*4}}')
-        print('-'*100)
-        for arg in vars(args_parse):
-            print(f'{arg:<{MAX_WIDTH}}: {str(getattr(args_parse, arg)):<{MAX_WIDTH}}')
+        print('state_space shape')
+        print(self.state_space.shape)
 
-        print('-'*100)
-        print(f'\n state_space shape:  {self.state_space.shape[0]}')
-        print(f'\n n_actions: {args_parse.n_actions_enable} --> {[ACTIONS_DESCRIPTION[i] for i in range(args_parse.n_actions_enable)]}')
-
-
-        if args_parse.resume:
-            # raise SystemExit
-            self.Q_table = pd.read_csv(args_parse.Q_source_dir, header=None)
+        if USE_EXIST_Q: 
+            self.Q_table = pd.read_csv(Q_SOURCE_DIR, header=None)
             self.Q_table = self.Q_table.to_numpy()
         else:
-            print(f'\n not resume then create new Q Table')
             self.Q_table = createQTable(len(self.state_space), len(self.actions))
-        print(f' Q-table shape{self.Q_table.shape}')
-        # if not os.path.exists(args_parse.log_file_dir +'/LogInfo.txt'):
-        #     self.log_sim_info = open(args_parse.log_file_dir +'/LogInfo.txt','w')
-        # if not os.path.exists(args_parse.log_file_dir +'/LogInfo.txt'):
-        #     self.log_sim_params = open(args_parse.log_file_dir +'/LogParams.txt','w')
-        # Init log files
 
-        
-        print()
-        # input("Press enter to continue...")
-        self.log_sim_info = open(args_parse.log_file_dir +'/LogInfo.txt','w')
-        self.log_sim_params = open(args_parse.log_file_dir +'/LogParams.txt','w')
+        print('Initial Q-table:')
+        print(self.Q_table.shape, self.Q_table)
+        # Init log files
+        self.log_sim_info = open(LOG_FILE_DIR+'/LogInfo.txt','w+')
+        self.log_sim_params = open(LOG_FILE_DIR+'/LogParams.txt','w+')
         # Learning parameters
         self.T = T_INIT
         self.EPSILON = EPSILON_INIT
@@ -181,12 +109,42 @@ class LearningNode(Node):
         self.reward_min_per_episode = np.array([])
         self.reward_avg_per_episode = np.array([])
         self.ep_reward_arr = np.array([])
+
+        tmp_time = datetime.today()
+        time_str = tmp_time.strftime("%y%m%d_%H%M%S")
+
+        self.logs_steps_per_episod_path = LOG_FILE_DIR+'/logs_steps_per_episode.csv'
+        self.staps_per_episode_path = LOG_FILE_DIR+f'/steps_per_episode-{time_str}.csv'
+
+        self.logs_reward_per_episode_path = LOG_FILE_DIR+'/logs_reward_per_episode.csv'
+        self.reward_per_episode_path = LOG_FILE_DIR+f'/reward_per_episode-{time_str}.csv'
+
+        self.q_table_path = LOG_FILE_DIR+'/Qtable.csv'
+        self.state_space_path = LOG_FILE_DIR+'/StateSpace.csv'
+        self.T_per_episode_path = LOG_FILE_DIR+'/T_per_episode.csv'
+        self.t_per_episode_path = LOG_FILE_DIR+'/t_per_episode.csv'
+        self.EPSILON_per_episode_path = LOG_FILE_DIR+'/EPSILON_per_episode.csv'
+        self.reward_min_per_episode_path = LOG_FILE_DIR+'/reward_min_per_episode.csv'
+        self.reward_max_per_episode_path = LOG_FILE_DIR+'/reward_max_per_episode.csv'
+        self.reward_avg_per_episode_path = LOG_FILE_DIR+'/reward_avg_per_episode.csv'
+
+        if os.path.isfile(self.logs_steps_per_episod_path):
+            self.logs_steps_per_episode = np.genfromtxt(self.logs_steps_per_episod_path,delimiter = ' , ')
+        else:
+            self.logs_steps_per_episode = np.array([])
+
         self.steps_per_episode = np.array([])
+
+        if os.path.isfile(self.logs_reward_per_episode_path):
+            self.logs_reward_per_episode = np.genfromtxt(self.logs_reward_per_episode_path,delimiter = ' , ')
+        else:
+            self.logs_reward_per_episode = np.array([])
+
         self.reward_per_episode = np.array([])
+
         # initial position
         self.robot_in_pos = False
         self.first_action_taken = False
-
         # init time
         self.t_0 = self.get_clock().now()
         self.t_start = self.get_clock().now()
@@ -204,7 +162,6 @@ class LearningNode(Node):
         self.t_per_episode = np.array([])
 
         self.CUMULATIVE_REWARD = CUMULATIVE_REWARD
-        self.WIN_COUNT = WIN_COUNT
         self.terminal_state = False
         self.is_set_pos = False
     
@@ -222,18 +179,18 @@ class LearningNode(Node):
         # Log simulation parameters
         text = '\r\nSimulation parameters: \r\n'
         text = text + '--------------------------------------- \r\n'
-        # if RANDOM_INIT_POS:
-        #     text = text + 'INITIAL POSITION = RANDOM \r\n'
-        # else:
-        #     text = text + 'INITIAL POSITION = ( %.2f , %.2f , %.2f ) \r\n' % (X_INIT,Y_INIT,THETA_INIT)
+        if RANDOM_INIT_POS:
+            text = text + 'INITIAL POSITION = RANDOM \r\n'
+        else:
+            text = text + 'INITIAL POSITION = ( %.2f , %.2f , %.2f ) \r\n' % (X_INIT,Y_INIT,THETA_INIT)
         text = text + '--------------------------------------- \r\n'
-        text = text + 'MAX_EPISODES = %d \r\n' % args_parse.max_episodes
-        text = text + 'MAX_STEPS_PER_EPISODE = %d \r\n' % args_parse.max_step_per_episodes
+        text = text + 'MAX_EPISODES = %d \r\n' % MAX_EPISODES
+        text = text + 'MAX_STEPS_PER_EPISODE = %d \r\n' % MAX_STEPS_PER_EPISODE
         text = text + 'MIN_TIME_BETWEEN_ACTIONS = %.2f s \r\n' % MIN_TIME_BETWEEN_ACTIONS
         text = text + '--------------------------------------- \r\n'
         text = text + 'ALPHA = %.2f \r\n' % ALPHA
         text = text + 'GAMMA = %.2f \r\n' % GAMMA
-        if args_parse.exploration_func == 1:
+        if EXPLORATION_FUNCTION == 1:
             text = text + 'T_INIT = %.3f \r\n' % T_INIT
             text = text + 'T_GRAD = %.3f \r\n' % T_GRAD
             text = text + 'T_MIN = %.3f \r\n' % T_MIN
@@ -278,7 +235,6 @@ class LearningNode(Node):
         wait_set.add_guard_condition(sigint_gc.handle)
 
         timeout_nsec = timeout_sec_to_nsec(time_to_wait)
-        # print(f'time_to_wait: {timeout_nsec}')
         wait_set.wait(timeout_nsec)
 
         subs_ready = wait_set.get_ready_entities('subscription')
@@ -296,24 +252,28 @@ class LearningNode(Node):
         return (False, None)
     
     def save_info_csv(self):
-        print(f'\n writing to csv...')
-        saveQTable(args_parse.log_file_dir+'/Qtable.csv', self.Q_table)
-        np.savetxt(args_parse.log_file_dir+'/StateSpace.csv', self.state_space, '%d')
-        np.savetxt(args_parse.log_file_dir+'/steps_per_episode.csv', self.steps_per_episode, delimiter = ' , ')
-        np.savetxt(args_parse.log_file_dir+'/reward_per_episode.csv', self.reward_per_episode, delimiter = ' , ')
-        np.savetxt(args_parse.log_file_dir+'/T_per_episode.csv', self.T_per_episode, delimiter = ' , ')
-        np.savetxt(args_parse.log_file_dir+'/EPSILON_per_episode.csv', self.EPSILON_per_episode, delimiter = ' , ')
-        np.savetxt(args_parse.log_file_dir+'/reward_min_per_episode.csv', self.reward_min_per_episode, delimiter = ' , ')
-        np.savetxt(args_parse.log_file_dir+'/reward_max_per_episode.csv', self.reward_max_per_episode, delimiter = ' , ')
-        np.savetxt(args_parse.log_file_dir+'/reward_avg_per_episode.csv', self.reward_avg_per_episode, delimiter = ' , ')
-        np.savetxt(args_parse.log_file_dir+'/t_per_episode.csv', self.t_per_episode, delimiter = ' , ')
+        print('writing to csv...')
+        saveQTable(self.q_table_path, self.Q_table)
+        np.savetxt(self.state_space_path, self.state_space, '%d')
+
+        np.savetxt(self.staps_per_episode_path, self.steps_per_episode, delimiter = ' , ')
+        np.savetxt(self.logs_steps_per_episod_path , self.logs_steps_per_episode, delimiter = ' , ')
+
+        np.savetxt(self.reward_per_episode_path, self.reward_per_episode, delimiter = ' , ')
+        np.savetxt(self.logs_reward_per_episode_path, self.logs_reward_per_episode, delimiter = ' , ')
+
+        np.savetxt(self.T_per_episode_path, self.T_per_episode, delimiter = ' , ')
+        np.savetxt(self.EPSILON_per_episode_path, self.EPSILON_per_episode, delimiter = ' , ')
+        np.savetxt(self.reward_min_per_episode_path, self.reward_min_per_episode, delimiter = ' , ')
+        np.savetxt(self.reward_max_per_episode_path, self.reward_max_per_episode, delimiter = ' , ')
+        np.savetxt(self.reward_avg_per_episode_path, self.reward_avg_per_episode, delimiter = ' , ')
+        np.savetxt(self.t_per_episode_path, self.t_per_episode, delimiter = ' , ')
 
     def timer_callback(self):
             _, msgScan = self.wait_for_message('/scan', LaserScan)
 
             # find time taken betwwen 2 callbacks
             step_time = (self.get_clock().now() - self.t_step).nanoseconds / 1e9
-            # self.prev_position = (999, 999)
 
             #if step_time > MIN_TIME_BETWEEN_ACTIONS:
             self.t_step = self.get_clock().now()
@@ -321,17 +281,12 @@ class LearningNode(Node):
                 text = '\r\nTOO BIG STEP TIME: %.2f s' % step_time
                 print(text)
                 self.log_sim_info.write(text+'\r\n')
-                # Log data to file
-                self.save_info_csv()
-                
-                raise SystemExit
             
             # End of Learning
-            if self.episode > args_parse.max_episodes :#or self.terminal_state:
+            if self.episode > MAX_EPISODES :#or self.terminal_state:
                 # simulation time
                 self.is_set_pos = False
-                # self.MAX_RADIUS = np.linalg.norm([X_INIT - GOAL_X, Y_INIT - GOAL_Y])
-                # print(self.episode)
+                print(self.episode)
                 sim_time = (self.get_clock().now() - self.t_sim_start).nanoseconds / 1e9
                 sim_time_h = sim_time // 3600
                 sim_time_m = ( sim_time - sim_time_h * 3600 ) // 60
@@ -339,7 +294,7 @@ class LearningNode(Node):
 
                 # real time
                 # now_stop = datetime.now()
-                # # dt_string_stop = now_stop.strftime("%d/%m/%Y %H:%M:%S")
+                # dt_string_stop = now_stop.strftime("%d/%m/%Y %H:%M:%S")
                 # real_time_delta = (now_stop - self.now_start).total_seconds()
                 # real_time_h = real_time_delta // 3600
                 # real_time_m = ( real_time_delta - real_time_h * 3600 ) // 60
@@ -347,7 +302,7 @@ class LearningNode(Node):
 
                 # Log learning session info to file
                 text = '--------------------------------------- \r\n\r\n'
-                text = text + 'MAX EPISODES REACHED(%d), LEARNING FINISHED' % args_parse.max_episodes + '\r\n'
+                text = text + 'MAX EPISODES REACHED(%d), LEARNING FINISHED' % MAX_EPISODES + '\r\n'
                 text = text + 'Simulation time: %d:%d:%d  h/m/s \r\n' % (sim_time_h, sim_time_m, sim_time_s)
                 # text = text + 'Real time: %d:%d:%d  h/m/s \r\n' % (real_time_h, real_time_m, real_time_s)
                 print(text)
@@ -362,15 +317,12 @@ class LearningNode(Node):
                 self.log_sim_params.close()
                 raise SystemExit
             else:
+
                 ep_time = (self.get_clock().now() - self.t_ep).nanoseconds / 1e9
                 # End of en Episode
-                print(f'\n episode {self.episode} of {args_parse.max_episodes}')
-                
-                if self.CUMULATIVE_REWARD < args_parse.reward_threshold or self.terminal_state:
+                print("Episode: ", self.episode)
+                if self.CUMULATIVE_REWARD < REWARD_THRESHOLD or self.terminal_state:
                     robotStop(self.velPub)
-                    print(f"\n End of episode. step: {self.ep_steps}")
-                    print(f' CUMULATIVE_REWARD: {self.CUMULATIVE_REWARD}')
-                    print(f' WIN_COUNT: {self.WIN_COUNT}')
                     # if self.crash:
                     #     # get crash position
                     #     _, odomMsg = self.wait_for_message('/odom', Odometry)
@@ -381,8 +333,8 @@ class LearningNode(Node):
                     self.reward_min = np.min(self.ep_reward_arr)
                     self.reward_max = np.max(self.ep_reward_arr)
                     self.reward_avg = np.mean(self.ep_reward_arr)
-                    # now = datetime.now()
-                    # dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+                    now = datetime.now()
+                    dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
                     text = '---------------------------------------\r\n'
                     # if self.terminal_state:
                     #     text = text + '\r\nEpisode %d ==> CRASH {%.2f,%.2f,%.2f}    ' % (self.episode, x_crash, y_crash, theta_crash) + dt_string
@@ -391,11 +343,11 @@ class LearningNode(Node):
                     #     text = text + '\r\nEpisode %d ==> MAX STEPS PER EPISODE REACHED {%d}    ' % (self.episode, MAX_STEPS_PER_EPISODE) + dt_string
                     # else:
                     #     text = text + '\r\nEpisode %d ==> UNKNOWN TERMINAL CASE    ' % self.episode + dt_string
-                    text = text + '\r\nepisode time: %.2f s (avg step: %.2f s) \r\n' % (ep_time, ep_time / (self.ep_steps))
+                    text = text + '\r\nepisode time: %.2f s (avg step: %.2f s) \r\n' % (ep_time, ep_time / self.ep_steps)
                     text = text + 'episode steps: %d \r\n' % self.ep_steps
                     text = text + 'episode reward: %.2f \r\n' % self.ep_reward
                     text = text + 'episode max | avg | min reward: %.2f | %.2f | %.2f \r\n' % (self.reward_max, self.reward_avg, self.reward_min)
-                    if args_parse.exploration_func == 1:
+                    if EXPLORATION_FUNCTION == 1:
                         text = text + 'T = %f \r\n' % self.T
                     else:
                         text = text + 'EPSILON = %f \r\n' % self.EPSILON
@@ -418,51 +370,37 @@ class LearningNode(Node):
                     self.crash = 0
                     self.robot_in_pos = False
                     self.first_action_taken = False
-                    self.terminal_state = False
                     if self.T > T_MIN:
                         self.T = T_GRAD * self.T
                     if self.EPSILON > EPSILON_MIN:
                         self.EPSILON = EPSILON_GRAD * self.EPSILON
 
                     # save to csv every n episodes
-                    if self.episode % args_parse.max_episodes_before_save == 0:
-                        print(f"saving data to csv every {args_parse.max_episodes_before_save} episodes")
-                        if is_rand:
-                            (self.GOAL_X, self.GOAL_Y) = np.random.choice(R,2)
-                            GOAL_THETA = 0
-                            print((self.GOAL_X, self.GOAL_Y))
-                        else:
-                            (self.GOAL_X, self.GOAL_Y, GOAL_THETA) = tuple(args_parse.GOAL_POSITION)
+                    if self.episode % MAX_EPISODES_BEFORE_SAVE == 0:
+                        print(f"saving data to csv every {MAX_EPISODES_BEFORE_SAVE} episodes")
                         self.save_info_csv()
-                        
-                    
+
+
                     self.episode = self.episode + 1
-                    sleep(1)
                 else:
                     self.ep_steps = self.ep_steps + 1
-
                     # Initial position
                     if not self.is_set_pos:
-                        _, odomMsg = self.wait_for_message('/odom', Odometry)
                         robotStop(self.velPub)
                         self.ep_steps = self.ep_steps - 1
                         self.first_action_taken = False
                         # init pos
-                        (x_set_init, y_set_init) = getPosition(odomMsg)
-                            
                         if RANDOM_INIT_POS:
                             print('set random pos')
                             ( x_init , y_init , theta_init ) = robotSetRandomPos(self.setPosPub)
                         else:
                             print('set pos')
-                            ( x_init , y_init , theta_init ) = robotSetPos(self.setPosPub, x_set_init, y_set_init, THETA_INIT)
+                            ( x_init , y_init , theta_init ) = robotSetPos(self.setPosPub, X_INIT, Y_INIT, THETA_INIT)
 
-                            self.prev_position = getPosition(odomMsg)
-                            self.MAX_RADIUS = np.linalg.norm([x_init - self.GOAL_X, y_init - self.GOAL_Y])
-                        # _, odomMsg = self.wait_for_message('/odom', Odometry)
-                        # ( x , y ) = getPosition(odomMsg)
-                        
-                        # theta = degrees(getRotation(odomMsg))
+                        _, odomMsg = self.wait_for_message('/odom', Odometry)
+                        ( x , y ) = getPosition(odomMsg)
+                        print(x, y)
+                        theta = degrees(getRotation(odomMsg))
                         # check init pos
                         self.is_set_pos = True
                         # if abs(x-x_init) < 0.01 and abs(y-y_init) < 0.01 and abs(theta-theta_init) < 1:
@@ -470,21 +408,16 @@ class LearningNode(Node):
                         #     #sleep(2)
                         # else:
                         #     self.robot_in_pos = False
-                        
                     # First acion
                     elif not self.first_action_taken:
-                        _, odomMsg = self.wait_for_message('/odom', Odometry)               #just added
-                        ( current_x , current_y ) = getPosition(odomMsg)                    #just added
-                        ( lidar, angles ) = lidarScan(msgScan)                              #just added
-                        
-
-                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9, x10 ) = scanDiscretization(self.state_space, lidar, (self.GOAL_X, self.GOAL_Y), (current_x, current_y),self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
+                        ( lidar, angles ) = lidarScan(msgScan)
+                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, lidar)
                         self.crash = checkCrash(lidar)
 
-                        if args_parse.exploration_func == 1 :
+                        if EXPLORATION_FUNCTION == 1 :
                             ( self.action, status_strat ) = softMaxSelection(self.Q_table, state_ind, self.actions, self.T)
                         else:
-                            ( self.action, status_strat ) = epsiloGreedyExploration(self.Q_table, state_ind, self.actions, self.EPSILON)
+                            ( self.action, status_strat ) = epsiloGreedyExploration(self.Q_table, state_ind, self.actions, self.T)
 
                         status_rda = robotDoAction(self.velPub, self.action)
 
@@ -504,42 +437,27 @@ class LearningNode(Node):
 
                     # Rest of the algorithm
                     else:
-                        _, odomMsg = self.wait_for_message('/odom', Odometry)               #just added
-                        ( current_x , current_y ) = getPosition(odomMsg)                    #just added
                         ( lidar, angles ) = lidarScan(msgScan)
-                        # print(self.prev_position,( current_x , current_y ))
-                        
+                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, lidar)
+                        self.crash = checkCrash(lidar)
+
                         # get position
                         _, odomMsg = self.wait_for_message('/odom', Odometry)
-                        yaw = getRotation(odomMsg)
-
-
-                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9, x10 ) = scanDiscretization(self.state_space, lidar, (self.GOAL_X, self.GOAL_Y), (current_x, current_y),self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
-                        self.crash = checkCrash(lidar)
-                        
+                        ( current_x , current_y ) = getPosition(odomMsg)
                         # radius caculated by norm of  and goal position
+                        MAX_RADIUS = np.linalg.norm([X_INIT - GOAL_X, Y_INIT - GOAL_Y])
                     
                         # ( reward, terminal_state ) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash)
-                        # getReward(action, prev_action,lidar, prev_lidar, crash, current_position, goal_position, max_radius, args_parse.radiaus_reduce_rate, nano_start_time, nano_current_time):
-                        ( reward, self.terminal_state, win_count) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash,
-                                                                   (current_x, current_y),
-                                                                    # self.prev_position,
-                                                                     (self.GOAL_X, self.GOAL_Y), 
-                                                                    self.MAX_RADIUS, args_parse.radiaus_reduce_rate, ep_time ,
-                                                                    self.get_clock().now().nanoseconds, 
-                                                                    args_parse.GOAL_RADIUS, x10, self.WIN_COUNT)
-                        
+                        # getReward(action, prev_action,lidar, prev_lidar, crash, current_position, goal_position, max_radius, radius_reduce_rate, nano_start_time, nano_current_time):
+                        ( reward, self.terminal_state) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash, (current_x, current_y), (GOAL_X, GOAL_Y), MAX_RADIUS, RADIUS_REDUCE_RATE, ep_time , self.get_clock().now().nanoseconds, GOAL_RADIUS)
                         self.CUMULATIVE_REWARD += reward
-                        self.WIN_COUNT = win_count
-                        print(f' CUMULATIVE_REWARD: {self.CUMULATIVE_REWARD}')
-                        print(f' WIN_COUNT: {self.WIN_COUNT}')
-                        # print("time: ", self.get_clock().now().nanoseconds)
+                        print('CUMULATIVE_REWARD: ', self.CUMULATIVE_REWARD)
                         ( self.Q_table, status_uqt ) = updateQTable(self.Q_table, self.prev_state_ind, self.action, reward, state_ind, self.alpha, self.gamma)
 
-                        if args_parse.exploration_func == 1:
+                        if EXPLORATION_FUNCTION == 1:
                             ( self.action, status_strat ) = softMaxSelection(self.Q_table, state_ind, self.actions, self.T)
                         else:
-                            ( self.action, status_strat ) = epsiloGreedyExploration(self.Q_table, state_ind, self.actions, self.EPSILON)
+                            ( self.action, status_strat ) = epsiloGreedyExploration(self.Q_table, state_ind, self.actions, self.T)
 
                         status_rda = robotDoAction(self.velPub, self.action)
 
@@ -559,32 +477,19 @@ class LearningNode(Node):
                         self.prev_action = self.action
                         self.prev_state_ind = state_ind
 
-                        ( current_x , current_y ) = getPosition(odomMsg)
-                        self.prev_position = (current_x, current_y)
-
-def main(ep_count, args=None):
+def main(args=None):
     rclpy.init(args=args)
-    # print('args_parse: ', args_parse)
+
     movebase_publisher = LearningNode()
     try:
         rclpy.spin(movebase_publisher)
     except SystemExit:                 # <--- process the exception 
         rclpy.logging.get_logger("End of learning").info('Done')
-    
-        
     # Destroy the node explicitly
     # (optional - otherwise it will be done automatically
+    # when the garbage collector destroys the node object)
     movebase_publisher.destroy_node()
     rclpy.shutdown()
-    
-    # rclpy.logging.get_logger("Time snap error").info(" at episodes: ", movebase_publisher.episode)
-    ep_count += movebase_publisher.episode
-    if ep_count < args_parse.max_episodes:
-        # main()
-        # print("I'm in :>")
-        main(ep_count= ep_count, args=None)
-    print("time skip error at episodes: ", movebase_publisher.episode, " total episodes: ", ep_count)
-    # print("End Idiot.")
 
 if __name__ == '__main__':
-    main(ep_count = 0, args = None)
+    main()
