@@ -83,7 +83,8 @@ GOAL_RADIUS = .1
 ACTIONS_DESCRIPTION = { 0 : 'Forward',
                         1 : 'TurnLeft',
                         2 : 'TurnRight',
-                        3 : 'SuperForward'
+                        3 : 'SuperForward',
+                        
                         }
 MAX_WIDTH = 25
 
@@ -168,8 +169,8 @@ class LearningNode(Node):
         
         print()
         # input("Press enter to continue...")
-        self.log_sim_info = open(args_parse.log_file_dir +'/LogInfo.txt','w')
-        self.log_sim_params = open(args_parse.log_file_dir +'/LogParams.txt','w')
+        self.log_sim_info = open(args_parse.log_file_dir +'/LogInfo.txt','a')
+        self.log_sim_params = open(args_parse.log_file_dir +'/LogParams.txt','a')
         # Learning parameters
         self.T = T_INIT
         self.EPSILON = EPSILON_INIT
@@ -529,11 +530,12 @@ class LearningNode(Node):
                                                                      (self.GOAL_X, self.GOAL_Y), 
                                                                     self.MAX_RADIUS, args_parse.radiaus_reduce_rate, ep_time ,
                                                                     self.get_clock().now().nanoseconds, 
-                                                                    args_parse.GOAL_RADIUS, x9, self.WIN_COUNT)
+                                                                    args_parse.GOAL_RADIUS, x9, self.WIN_COUNT, x4)
                         
                         self.CUMULATIVE_REWARD += reward
                         self.WIN_COUNT = win_count
                         print(f' CUMULATIVE_REWARD: {self.CUMULATIVE_REWARD}')
+                        # print(f' Position : {getPosition(odomMsg)}')
                         # print(f' WIN_COUNT: {self.WIN_COUNT}')
                         # print("time: ", self.get_clock().now().nanoseconds)
                         ( self.Q_table, status_uqt ) = updateQTable(self.Q_table, self.prev_state_ind, self.action, reward, state_ind, self.alpha, self.gamma)
@@ -544,7 +546,7 @@ class LearningNode(Node):
                             ( self.action, status_strat ) = epsiloGreedyExploration(self.Q_table, state_ind, self.actions, self.EPSILON)
 
                         status_rda = robotDoAction(self.velPub, self.action)
-
+                        print("Action: ", self.action)
                         if not status_uqt == 'updateQTable => OK':
                             print('\r\n', status_uqt, '\r\n')
                             self.log_sim_info.write('\r\n'+status_uqt+'\r\n')
