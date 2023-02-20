@@ -207,8 +207,8 @@ class ControlNode(Node):
                 # Get lidar scan
                 ( lidar, angles ) = lidarScan(msgScan)
                 # ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, lidar)
-                ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9, x10 ) = scanDiscretization(self.state_space, lidar, (X_GOAL, Y_GOAL), (x, y), self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
-                # ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9 ) = scanDiscretization(self.state_space, lidar, (X_GOAL, Y_GOAL), (x, y), self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
+                # ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9, x10 ) = scanDiscretization(self.state_space, lidar, (X_GOAL, Y_GOAL), (x, y), self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
+                ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9 ) = scanDiscretization(self.state_space, lidar, (X_GOAL, Y_GOAL), (x, y), self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
                 
     
                 # Check for objects nearby
