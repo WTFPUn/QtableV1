@@ -54,8 +54,6 @@ if REAL_ROBOT:
     X_GOAL = 1.7
     Y_GOAL = 1.1
     THETA_GOAL = 90
-
-    GOAL_RADIUS = 0.1
 else:
     RANDOM_INIT_POS = False
 
@@ -144,6 +142,8 @@ class ControlNode(Node):
         _, odomMsg = self.wait_for_message('/odom', Odometry)
         step_time = (self.get_clock().now() - self.t_step).nanoseconds / 1e9
 
+        self.prev_position = (999, 999)
+
         if step_time > MIN_TIME_BETWEEN_ACTIONS:
             self.t_step = self.get_clock().now()
 
@@ -153,8 +153,6 @@ class ControlNode(Node):
                     ( x_init , y_init , theta_init ) = (0, 0, 0)
                     _, odomMsg = self.wait_for_message('/odom', Odometry)
                     ( x , y ) = getPosition(odomMsg)
-                    self.prev_position = getPosition(odomMsg)
-                    self.MAX_RADIUS = np.linalg.norm([x_init - X_GOAL, y_init - Y_GOAL])
                     theta = degrees(getRotation(odomMsg))
                     self.robot_in_pos = True
                     print('\r\nInitial position:')
@@ -228,8 +226,6 @@ class ControlNode(Node):
                 text = text + '\r\nx :       %.2f -> %.2f [m]' % (x, X_GOAL)
                 text = text + '\r\ny :       %.2f -> %.2f [m]' % (y, Y_GOAL)
                 text = text + '\r\ntheta :   %.2f -> %.2f [degrees]' % (degrees(theta), THETA_GOAL)
-
-                self.prev_position = ( x , y )
 
                 if status == 'Goal position reached!':
                     robotStop(self.velPub)

@@ -162,7 +162,7 @@ def getReward(  action,
 
     # Crash panelty
     if crash:
-        reward += -200
+        reward += -500
 
     # facing wall panelty/rewards
     lidar_horizon = np.concatenate((lidar[(ANGLE_MIN + sum(HORIZON_WIDTH[:2])):(ANGLE_MIN):-1],lidar[(ANGLE_MAX):(ANGLE_MAX - sum(HORIZON_WIDTH[:2])):-1]))
@@ -194,6 +194,12 @@ def getReward(  action,
 
     #facing goal reward
     elif angle_state == 1:
+        reward += 5
+
+    elif angle_state == 2:
+        reward += 1
+
+    elif angle_state == 3:
         reward += 1
 
     # calculate distance reward
