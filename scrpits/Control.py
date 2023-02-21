@@ -67,7 +67,7 @@ def robotGoForward(velPub):
 
 # Go 2 x forward command
 def robotGoSuperForward(velPub):
-    velMsg = createVelMsg(2*CONST_LINEAR_SPEED_FORWARD,CONST_ANGULAR_SPEED_FORWARD)
+    velMsg = createVelMsg(3*CONST_LINEAR_SPEED_FORWARD,CONST_ANGULAR_SPEED_FORWARD)
     velPub.publish(velMsg)
 
 # Go backward command

@@ -40,7 +40,7 @@ MIN_TIME_BETWEEN_ACTIONS = 0.0
 MAX_EPISODES_BEFORE_SAVE = 5
 
 # Learning parameters
-ALPHA = 0.5
+ALPHA = 0.1
 GAMMA = 0.9
 
 T_INIT = 25
@@ -81,8 +81,8 @@ GOAL_RADIUS = .1
 
 # edit when chang order in def roboDoAction in Control.py  *****
 ACTIONS_DESCRIPTION = { 0 : 'Forward',
-                        1 : 'TurnLeft',
-                        2 : 'TurnRight',
+                        1 : 'TurnRight',
+                        2 : 'TurnLeft',
                         3 : 'SuperForward',
                         
                         }
@@ -477,11 +477,11 @@ class LearningNode(Node):
                     # First acion
                     elif not self.first_action_taken:
                         _, odomMsg = self.wait_for_message('/odom', Odometry)               #just added
-                        ( current_x , current_y ) = getPosition(odomMsg)                    #just added
+                        ( current_x , current_y ) = getPosition(odomMsg)                    #just added 
                         ( lidar, angles ) = lidarScan(msgScan)                              #just added
                         
 
-                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9 ) = scanDiscretization(self.state_space, lidar, (self.GOAL_X, self.GOAL_Y), (current_x, current_y),self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
+                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, lidar, (self.GOAL_X, self.GOAL_Y), (current_x, current_y),self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
                         self.crash = checkCrash(lidar)
 
                         if args_parse.exploration_func == 1 :
@@ -517,7 +517,7 @@ class LearningNode(Node):
                         yaw = getRotation(odomMsg)
 
 
-                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9 ) = scanDiscretization(self.state_space, lidar, (self.GOAL_X, self.GOAL_Y), (current_x, current_y),self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
+                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7) = scanDiscretization(self.state_space, lidar, (self.GOAL_X, self.GOAL_Y), (current_x, current_y),self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
                         self.crash = checkCrash(lidar)
                         
                         # radius caculated by norm of  and goal position
@@ -530,7 +530,7 @@ class LearningNode(Node):
                                                                      (self.GOAL_X, self.GOAL_Y), 
                                                                     self.MAX_RADIUS, args_parse.radiaus_reduce_rate, ep_time ,
                                                                     self.get_clock().now().nanoseconds, 
-                                                                    args_parse.GOAL_RADIUS, x9, self.WIN_COUNT, x4)
+                                                                    args_parse.GOAL_RADIUS, self.WIN_COUNT, x4)
                         
                         self.CUMULATIVE_REWARD += reward
                         self.WIN_COUNT = win_count

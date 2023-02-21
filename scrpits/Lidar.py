@@ -51,9 +51,8 @@ def scanDiscretization(state_space, lidar, target_pos, robot_pose, robot_prev_po
     x5 = 2 
     x6 = 1
     x7 = 1
-    
-    x8 = 2
-    x9 = 1
+    # x8 = 2
+    # x8 = 1
 
     length_lidar = len(lidar) 
     # print(f'length_lidar: {length_lidar}')
@@ -135,12 +134,12 @@ def scanDiscretization(state_space, lidar, target_pos, robot_pose, robot_prev_po
 
     dist = np.linalg.norm(target_pos - robot_pose)
 
-    if dist > .5 * max_dist:
-        x8 = 2
-    elif dist > 2*goal_radius:
-        x8 = 1
-    else:
-        x8 = 0
+    # if dist > .5 * max_dist:
+    #     x8 = 2
+    # elif dist > 2*goal_radius:
+    #     x8 = 1
+    # else:
+    #     x8 = 0
     
     robot_pose = np.array([robot_pose[0], robot_pose[1]])
     robot_prev_pose = np.array([robot_prev_pose[0], robot_prev_pose[1]])
@@ -154,22 +153,22 @@ def scanDiscretization(state_space, lidar, target_pos, robot_pose, robot_prev_po
     d_vec3d = np.array([d_vec[0], d_vec[1], 0])
     v_vec3d = np.array([v_vec[0], v_vec[1], 0])
 
-    if np.dot(d_vec, v_vec) < 0:
-        x9 = 0 # going back
-    else:
-        if np.arccos(np.dot(d_vec, v_vec) / (np.linalg.norm(d_vec) * np.linalg.norm(v_vec))) < np.arcsin(goal_radius)/dist:
-            x9 = 1 # going to target
-        elif np.cross(d_vec3d, v_vec3d)[2] < 0:
-            x9 = 2  # too much right
-        else:
-            x9 = 3 # too much left
+    # if np.dot(d_vec, v_vec) < 0:
+    #     x9 = 0 # going back
+    # else:
+    #     if np.arccos(np.dot(d_vec, v_vec) / (np.linalg.norm(d_vec) * np.linalg.norm(v_vec))) < np.arcsin(goal_radius)/dist:
+    #         x9 = 1 # going to target
+    #     elif np.cross(d_vec3d, v_vec3d)[2] < 0:
+    #         x9 = 2  # too much right
+    #     else:
+    #         x9 = 3 # too much left
        
 
 
-    ss = np.where(np.all(state_space == np.array([x1, x2, x3, x4, x5, x6, x7, x8, x9]), axis = 1))
+    ss = np.where(np.all(state_space == np.array([x1, x2, x3, x4, x5, x6, x7]), axis = 1))
     state_ind = int(ss[0])
 
-    return ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9)
+    return ( state_ind, x1, x2, x3 , x4 , x5, x6, x7)
 
 # Check - crash
 def checkCrash(lidar):

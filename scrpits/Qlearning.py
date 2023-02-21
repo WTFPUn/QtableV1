@@ -35,9 +35,9 @@ def createStateSpace():
     x5 = set((0,1,2))
     x6 = set((0,1))
     x7 = set((0,1))
-    x8 = set((0,1,2))
-    x9 = set((0,1,2,3))
-    state_space = set(product(x1,x2,x3,x4,x5,x6,x7,x8,x9))
+    # x8 = set((0,1,2))
+    # x9 = set((0,1,2,3))
+    state_space = set(product(x1,x2,x3,x4,x5,x6,x7))
     return np.array(list(state_space))
 
 # Create Q table, dim: n_states x n_actions
@@ -132,7 +132,7 @@ def getReward(  action,
                 nano_start_time, 
                 nano_current_time, 
                 goal_radius, 
-                angle_state,
+                # angle_state,
                 win_count,
                 x4):
 
@@ -153,17 +153,18 @@ def getReward(  action,
     #  nano time diff
     time_diff = (nano_current_time - nano_start_time)
     radius = max_radius - radius_reduce_rate * (time_diff)
-    # if radius/max_radius < 0.1:
-    #     radius = max_radius * 0.1
-    # if dist < radius:
-    #     reward += .1
-    # else:
-    #     reward += - .69
+    if radius/max_radius < 0.1:
+        radius = max_radius * 0.1
+    if dist < radius:
+        reward += .1
+    else:
+        reward += - .69
 
     # Crash panelty
     if crash:
+        reward += -500
         terminal_state = True
-        reward += -100
+        
 
     # facing wall panelty/rewards
     lidar_horizon = np.concatenate((lidar[(ANGLE_MIN + sum(HORIZON_WIDTH[:2])):(ANGLE_MIN):-1],lidar[(ANGLE_MAX):(ANGLE_MAX - sum(HORIZON_WIDTH[:2])):-1]))
@@ -179,51 +180,52 @@ def getReward(  action,
     # print(f'length_lidar: {length_lidar}')
     ratio = length_lidar / 360 
     leftLidar = min(lidar[round(ratio*81): round(ratio*91)])
-    rightLidar = min(lidar[round(ratio*270): round(ratio*280)])
+    rightLidar = min(lidar[round(ratio*270): round(ratio*279)])
     
     #  max(leftLidar, rightLidar) - abs(leftLidar - rightLidar)
-    if abs(leftLidar - rightLidar) > max(leftLidar, rightLidar) * .1:
-        reward -= 1*abs(leftLidar - rightLidar)
+    if abs(leftLidar - rightLidar) > max(leftLidar, rightLidar) * .05:
+        reward -= 3*abs(leftLidar - rightLidar)
     else:
-        reward += .5
+        reward += 0.5
         
     # action and prev_action is same and action is left or right
     if (prev_action == 1 and action == 2) or (prev_action == 2 and action == 1):
-        reward += -.2
+        reward += -1
 
     #repeat stop penelty
     # if prev_action == 2 and action == 2:
     #         reward += -5
     if x4 == 2:
-        reward += 1
+        reward += 2
     #reach goal
     if dist<goal_radius:
-        reward += 100
+        reward += 50
         terminal_state = True
         win_count += 1
     
-    #away from goal panelty
-    if angle_state == 0:
-        reward += -0.01
 
-    #facing goal reward
-    elif angle_state == 1:
-        reward += 0.03
+    # #away from goal panelty
+    # if angle_state == 0:
+    #     reward += -0.1
 
-    elif angle_state == 2:
-        reward += 0.01
+    # #facing goal reward
+    # elif angle_state == 1:
+    #     reward += 0.3
 
-    elif angle_state == 3:
-        reward += 0.01
+    # elif angle_state == 2:
+    #     reward += 0.1
 
-    # if add reward forward or super forward
-    if action == 0 or action == 3:
-        reward += 1
-    else :
-        reward += -.3
+    # elif angle_state == 3:
+    #     reward += 0.1
+
+    # # if add reward forward or super forward
+    # if action == 0 or action == 3:
+    #     reward += 0.5
+    # else :
+    #     reward += -0.3
 
     # calculate distance reward
-    # reward +=  3* (np.exp(-dist) - np.exp(-max_radius)) / (1 - np.exp(-max_radius))
+    reward +=  3* (np.exp(-dist) - np.exp(-max_radius)) / (1 - np.exp(-max_radius))
 
     return (reward, terminal_state, win_count)
     
