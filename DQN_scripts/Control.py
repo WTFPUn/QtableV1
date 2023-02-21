@@ -8,7 +8,7 @@ import numpy as np
 from tf_transformations import euler_from_quaternion, quaternion_from_euler
 
 # Q-learning speed parameters
-CONST_LINEAR_SPEED_FORWARD = 0.1
+CONST_LINEAR_SPEED_FORWARD = 0.5
 CONST_ANGULAR_SPEED_FORWARD = 0.0
 
 CONST_LINEAR_SPEED_TURN = 0.05

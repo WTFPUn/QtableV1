@@ -40,8 +40,8 @@ class Goal(Node):
         self.entity_name = 'goal'
 
         # manually change these to set goal (create publisher to be automatic)
-        self.goal_pose_x = 0.5
-        self.goal_pose_y = 0.0
+        self.goal_pose_x = 0.0
+        self.goal_pose_y = 2.0
 
         self.init_state = False
 

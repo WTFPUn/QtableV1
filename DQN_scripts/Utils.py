@@ -2,7 +2,7 @@ import math
 import random
 from collections import namedtuple, deque
 from itertools import count
-
+import numpy as np
 import torch
 import torch.nn as nn
 
@@ -13,7 +13,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
 BATCH_SIZE = 128
-GAMMA = 0.99
+GAMMA = 0.96
 EPS_START = 0.9
 EPS_END = 0.05
 EPS_DECAY = 1000
@@ -36,19 +36,20 @@ class ReplayMemory(object):
 
     def __len__(self):
         return len(self.memory)
-    
+   
 def select_action(state, steps_done, policy_net):
-    sample = random.random()
     eps_threshold = EPS_END + (EPS_START - EPS_END) * math.exp(-1. * steps_done / EPS_DECAY)
-    steps_done += 1
-    if sample > eps_threshold:
+    if np.random.uniform() > eps_threshold:
+        print(f'get Best Action')
         with torch.no_grad():
             # t.max(1) will return the largest column value of each row.
             # second column on max result is index of where max element was
             # found, so we pick action with the larger expected reward.
-            return policy_net(state).max(1)[1].view(1, 1)
+            return policy_net(state).max(1)[1].view(1, 1), eps_threshold
     else:
-        return torch.tensor([[env.action_space.sample()]], device=DEVICE, dtype=torch.long)
+        # return torch.tensor([[env.action_space.sample()]], device=DEVICE, dtype=torch.long)
+        print(f'get Random Action')
+        return torch.tensor(np.random.randint(5, size = 1), device=DEVICE, dtype=torch.long), eps_threshold
     
 
 def optimize_model(policy_net, target_net, optimizer, memory = ReplayMemory(10000), criterion = nn.SmoothL1Loss()):
@@ -84,7 +85,7 @@ def optimize_model(policy_net, target_net, optimizer, memory = ReplayMemory(1000
     with torch.no_grad():
         next_state_values[non_final_mask] = target_net(non_final_next_states).max(1)[0]
     # Compute the expected Q values
-    expected_state_action_values = (next_state_values * GAMMA) + reward_batch
+    expected_state_action_values = (next_state_values * GAMMA ) + reward_batch
 
     # Compute Huber loss
     loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))

@@ -50,7 +50,7 @@ ALPHA = 0.5
 GAMMA = 0.9
 
 # Log file directory
-CHECKPOINT_DIR = MODULES_PATH + '/Checkpoint/Log_learning'
+CHECKPOINT_DIR = MODULES_PATH + '/Checkpoint'
 
 # Q table source file
 DQN_SOURCE_DIR = CHECKPOINT_DIR + '/DQN_beta.pth'
@@ -70,13 +70,14 @@ ACTIONS_DESCRIPTION = { 0 : 'Forward',
                         4 : 'SuperForward'}
 MAX_WIDTH = 25
 STEP_DONE = 0
+WIN_COUNT = 0
 ########################################################################################################
 
-parser = argparse.ArgumentParser(description='Qtable V1 ~~Branch: welcomeToV2')
+parser = argparse.ArgumentParser(description='Qtable V1 ~~Branch: dqn_beta')
 # Log file directory
-parser.add_argument('--log_file_dir', default = CHECKPOINT_DIR, type=str, help='/Checkpoint/Log_learning')
+parser.add_argument('--log_file_dir', default = CHECKPOINT_DIR, type=str, help='/Checkpoint')
 # Q table source file
-parser.add_argument('--DQN_source_dir', default = DQN_SOURCE_DIR, type=str, help='/Checkpoint/Log_learning/DQN_beta.pth')
+parser.add_argument('--DQN_source_dir', default = DQN_SOURCE_DIR, type=str, help='/Checkpoint/DQN_beta.pth')
 
 # Episode parameters
 parser.add_argument('--max_episodes', default=MAX_EPISODES, type=int, help="MAX_EPISODES = 10 (default)", dest="max_episodes")
@@ -96,7 +97,6 @@ parser.add_argument('--GOAL_RADIUS', default=GOAL_RADIUS, type=float)
 args_parse = parser.parse_args()
 
 (GOAL_X, GOAL_Y, GOAL_THETA) = tuple(args_parse.GOAL_POSITION)
-WIN_COUNT = 0.0
 
 ########################################################################################################
 
@@ -127,12 +127,19 @@ class DQNLearningNode(Node):
             print(f'{arg:<{MAX_WIDTH}}: {str(getattr(args_parse, arg)):<{MAX_WIDTH}}')
 
         print('-'*100)
-        print(f'\n state_space shape:  {summary(self.policy_net, input_size = (len(self.state_space),))}')
+        print(f'\n n_state:  {len(self.state_space)}')
         print(f'\n n_actions: {args_parse.n_actions_enable} --> {[ACTIONS_DESCRIPTION[i] for i in range(args_parse.n_actions_enable)]}')
-
+        print(f'\n {"summary policy_net":^{MAX_WIDTH*2}}')
+        summary(self.policy_net, input_size = (len(self.state_space),))
         
         print()
-        input("Press enter to continue...")
+        # input("Press enter to continue...")
+        
+        # Episodes, steps, rewards
+        self.ep_steps = 0
+        self.ep_reward = 0
+        self.episode = 1
+        self.crash = 0
         # initial position
         self.robot_in_pos = False
         self.first_action_taken = False
@@ -153,7 +160,7 @@ class DQNLearningNode(Node):
         self.WIN_COUNT = WIN_COUNT
         self.terminal_state = False
         self.is_set_pos = False
-    
+
     
     def wait_for_message(
         node,
@@ -218,11 +225,23 @@ class DQNLearningNode(Node):
         _, odomMsg = self.wait_for_message('/odom', Odometry) 
         ( current_x , current_y ) = getPosition(odomMsg)
         ( lidar,_ ) = lidarScan(msgScan)
-        self.is_set_pos = False
+
+        # Initial position
+        if not self.is_set_pos:
+            robotStop(self.velPub)
+            (x_set_init, y_set_init) = getPosition(odomMsg)
+            print('set pos')
+            ( x_init , y_init ) = robotSetPos(self.setPosPub, x_set_init, y_set_init)
+            self.prev_position = getPosition(odomMsg)
+            self.MAX_RADIUS = np.linalg.norm([x_init - GOAL_X, y_init - GOAL_Y])
+            self.is_set_pos = True
 
         # First acion
         if not self.first_action_taken:
+                self.prev_lidar = lidar
                 self.prev_position = getPosition(odomMsg)
+                self.prev_action = 0
+                self.angle_state = 1
                 self.first_action_taken = True
 
         observation  = defineState( lidar = lidar, 
@@ -232,9 +251,10 @@ class DQNLearningNode(Node):
                                     max_dist = self.MAX_RADIUS, 
                                     goal_radius = args_parse.GOAL_RADIUS)
         
-        self.prev_position = ( current_x , current_y )
-        self.prev_lidar = lidar
-        self.angle_state = observation[-1]
+        # self.prev_position = ( current_x , current_y )
+        # self.prev_lidar = lidar
+        # self.prev_action = self.action
+        # self.angle_state = observation[-1]
 
         return observation
 
@@ -244,27 +264,27 @@ class DQNLearningNode(Node):
         """
         #after take action
         status_rda = robotDoAction(self.velPub, action)
-        if not status_rda == 'robotDoAction => OK':
-            print('\r\n', status_rda, '\r\n')
+        #if not status_rda == 'robotDoAction => OK':
+        print('\r\n', status_rda, '\r\n')
 
         _, msgScan = self.wait_for_message('/scan', LaserScan)
         _, odomMsg = self.wait_for_message('/odom', Odometry) 
         ( current_x , current_y ) = getPosition(odomMsg)
         ( lidar,_ ) = lidarScan(msgScan) 
         
-        ( reward, terminated) = getReward(   action = action, 
-                                                        prev_action = self.prev_action, 
-                                                        lidar = lidar, 
-                                                        prev_lidar = self.prev_lidar, 
-                                                        crash = self.crash,
-                                                        current_position = (current_x, current_y),
-                                                        goal_position = (GOAL_X, GOAL_Y), 
-                                                        max_radius = self.MAX_RADIUS, 
-                                                        radius_reduce_rate = args_parse.radiaus_reduce_rate, 
-                                                        nano_start_time = (self.get_clock().now() - self.t_ep).nanoseconds / 1e9 ,
-                                                        nano_current_time = self.get_clock().now().nanoseconds, 
-                                                        goal_radius = args_parse.GOAL_RADIUS, 
-                                                        angle_state = self.angle_state)
+        ( reward, terminated) = getReward(  action = action, 
+                                            prev_action = self.prev_action, 
+                                            lidar = lidar, 
+                                            prev_lidar = self.prev_lidar, 
+                                            crash = self.crash,
+                                            current_position = (current_x, current_y),
+                                            goal_position = (GOAL_X, GOAL_Y), 
+                                            max_radius = self.MAX_RADIUS, 
+                                            radius_reduce_rate = args_parse.radiaus_reduce_rate, 
+                                            nano_start_time = (self.get_clock().now() - self.t_ep).nanoseconds / 1e9 ,
+                                            nano_current_time = self.get_clock().now().nanoseconds, 
+                                            goal_radius = args_parse.GOAL_RADIUS, 
+                                            angle_state = self.angle_state)
         
         # Whether the truncation condition outside the scope of the MDP is satisfied. 
         # Typically, this is a timelimit, but could also be used to indicate an agent physically going out of bounds. 
@@ -273,6 +293,14 @@ class DQNLearningNode(Node):
             truncated = True
         else:
             truncated = False 
+
+        self.crash = checkCrash(lidar)
+        self.prev_position = ( current_x , current_y )
+        self.prev_lidar = lidar
+        self.prev_action = action
+        print(f'\n state: {state} , type: {type(state)}')
+        self.angle_state = state[0][-1].numpy()
+        print(f'\n self.angle_state: {self.angle_state}, type: {type(self.angle_state)}')
 
         observation = self.where_I_am()
         
@@ -297,14 +325,20 @@ class DQNLearningNode(Node):
             if self.episode < args_parse.max_episodes :
                 sleep(1)
                 print(f'\n episode {self.episode} of {args_parse.max_episodes}')
-                state = self.where_I_am(is_re_episode = True)
+                state = self.where_I_am(True)
                 state = torch.tensor(state, dtype=torch.float32, device=DEVICE).unsqueeze(0)
-
+                STEP_DONE = 0.0
                 for t in count():
-                    action = select_action(state, STEP_DONE, self.policy_net)
-                    observation, reward, terminated, truncated, _ = self.step(action, state)
+                    print(f'STEP_DONE: {STEP_DONE}')
+                    action, eps_threshold = select_action(state, STEP_DONE, self.policy_net)
+                    STEP_DONE += 1
+                    print(f'eps_threshold: {eps_threshold}  , {type(eps_threshold)}')
+                    print(f'action: {action.numpy()}  , {type(action)}')
+                    observation, reward, terminated, truncated = self.step(action, state)
                     self.CUMULATIVE_REWARD += reward
+                    print(f' CUMULATIVE_REWARD: {self.CUMULATIVE_REWARD}')
                     reward = torch.tensor([reward], device=DEVICE)
+                    print(f'terminated: {terminated} truncated: {truncated}')
                     done = terminated or truncated
 
                     if terminated:
@@ -312,6 +346,10 @@ class DQNLearningNode(Node):
                     else:
                         next_state = torch.tensor(observation, dtype=torch.float32, device=DEVICE).unsqueeze(0)
                     
+                    print(f'\n state: {state}, \
+                          \n action: {action}, \
+                          \n next_state: {next_state}, \
+                          \n reward: {reward}')
                     self.memory.push(state, action, next_state, reward)    
                     state = next_state
 
@@ -320,6 +358,7 @@ class DQNLearningNode(Node):
                                    target_net = self.target_net, 
                                    optimizer = self.optimizer,
                                    memory = self.memory)
+                    print(f'optimize done')
 
                     # Soft update of the target network's weights
                     # θ′ ← τ θ + (1 −τ )θ′
@@ -331,148 +370,19 @@ class DQNLearningNode(Node):
                     self.target_net.load_state_dict(target_net_state_dict)
 
                     if done:### done episode
+                        print('-'*100)
+                        print(f'\n done episode')
                         robotStop(self.velPub)
-                        print(f"\n End of episode. step: {self.ep_steps}")
+                        print(f" End of episode. step: {STEP_DONE}")
                         print(f' CUMULATIVE_REWARD: {self.CUMULATIVE_REWARD}')
                         torch.save(self.policy_net.state_dict(), args_parse.DQN_source_dir)
+                        print(f'saved!!!')
                         break
             
             else:
 
-                raise SystemExit
-
-                ep_time = (self.get_clock().now() - self.t_ep).nanoseconds / 1e9
-                # End of en Episode
-                print(f'\n episode {self.episode} of {args_parse.max_episodes}')
-                
-                if self.CUMULATIVE_REWARD < args_parse.reward_threshold or self.terminal_state:
-                    robotStop(self.velPub)
-                    print(f"\n End of episode. step: {self.ep_steps}")
-                    print(f' CUMULATIVE_REWARD: {self.CUMULATIVE_REWARD}')
-                    print(f' WIN_COUNT: {self.WIN_COUNT}')
-
-                    self.t_ep = self.get_clock().now()
-                    self.reward_min = np.min(self.ep_reward_arr)
-                    self.reward_max = np.max(self.ep_reward_arr)
-                    self.reward_avg = np.mean(self.ep_reward_arr)
-                    text = '---------------------------------------\r\n'
-                    self.reset.call_async(self.dummy_req)
-                    text = text + '\r\nepisode time: %.2f s (avg step: %.2f s) \r\n' % (ep_time, ep_time / (self.ep_steps))
-                    text = text + 'episode steps: %d \r\n' % self.ep_steps
-                    text = text + 'episode reward: %.2f \r\n' % self.ep_reward
-                    text = text + 'episode max | avg | min reward: %.2f | %.2f | %.2f \r\n' % (self.reward_max, self.reward_avg, self.reward_min)
-                    if args_parse.exploration_func == 1:
-                        text = text + 'T = %f \r\n' % self.T
-                    else:
-                        text = text + 'EPSILON = %f \r\n' % self.EPSILON
-                    print(text)
-
-                    self.ep_steps = 0
-                    self.ep_reward = 0
-                    # cum reward reset
-                    self.CUMULATIVE_REWARD = 0
-                    self.crash = 0
-                    self.robot_in_pos = False
-                    self.first_action_taken = False
-                    self.terminal_state = False
-
-                    # save to csv every n episodes
-                    if self.episode % args_parse.max_episodes_before_save == 0:
-                        print(f"saving data to csv every {args_parse.max_episodes_before_save} episodes")
-                        # self.save_info_csv()
-
-                    self.episode = self.episode + 1
-                    sleep(1)
-
-                else:
-                    self.ep_steps = self.ep_steps + 1
-
-                    # Initial position
-                    if not self.is_set_pos:
-                        _, odomMsg = self.wait_for_message('/odom', Odometry)
-                        robotStop(self.velPub)
-                        self.ep_steps = self.ep_steps - 1
-                        self.first_action_taken = False
-                        # init pos
-                        (x_set_init, y_set_init) = getPosition(odomMsg)
-                        print('set pos')
-                        ( x_init , y_init) = robotSetPos(self.setPosPub, x_set_init, y_set_init)
-
-                        self.prev_position = getPosition(odomMsg)
-                        self.MAX_RADIUS = np.linalg.norm([x_init - GOAL_X, y_init - GOAL_Y])
-                        # check init pos
-                        self.is_set_pos = True
-                      
-                    # First acion
-                    elif not self.first_action_taken:
-                        _, odomMsg = self.wait_for_message('/odom', Odometry)               #just added
-                        ( current_x , current_y ) = getPosition(odomMsg)                    #just added
-                        ( lidar, angles ) = lidarScan(msgScan)                              #just added
-                        
-
-                        states  = defineState(lidar, 
-                                              (GOAL_X, GOAL_Y), 
-                                              (current_x, current_y), 
-                                              self.prev_position, 
-                                              self.MAX_RADIUS, 
-                                              GOAL_RADIUS)
-                        
-                        self.crash = checkCrash(lidar)
-
-                        status_rda = robotDoAction(self.velPub, self.action)
-
-                        self.prev_lidar = lidar
-                        self.prev_action = self.action
-                        self.prev_state_ind = state_ind
-
-                        self.first_action_taken = True
-
-                        if not status_rda == 'robotDoAction => OK':
-                            print('\r\n', status_rda, '\r\n')
-
-                    # Rest of the algorithm
-                    else:
-                        _, odomMsg = self.wait_for_message('/odom', Odometry)               #just added
-                        ( current_x , current_y ) = getPosition(odomMsg)                    #just added
-                        ( lidar, angles ) = lidarScan(msgScan)
-                        # print(self.prev_position,( current_x , current_y ))
-                        
-                        # get position
-                        _, odomMsg = self.wait_for_message('/odom', Odometry)
-                        yaw = getRotation(odomMsg)
-
-
-                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9, x10 ) = scanDiscretization(self.state_space, lidar, (GOAL_X, GOAL_Y), (current_x, current_y),self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
-                        self.crash = checkCrash(lidar)
-                        
-                        # radius caculated by norm of  and goal position
-                    
-                        # ( reward, terminal_state ) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash)
-                        # getReward(action, prev_action,lidar, prev_lidar, crash, current_position, goal_position, max_radius, args_parse.radiaus_reduce_rate, nano_start_time, nano_current_time):
-                        ( reward, self.terminal_state, win_count) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash,
-                                                                   (current_x, current_y),
-                                                                    # self.prev_position,
-                                                                     (GOAL_X, GOAL_Y), 
-                                                                    self.MAX_RADIUS, args_parse.radiaus_reduce_rate, ep_time ,
-                                                                    self.get_clock().now().nanoseconds, 
-                                                                    args_parse.GOAL_RADIUS, x10, self.WIN_COUNT)
-                        
-                        self.CUMULATIVE_REWARD += reward
-                        self.WIN_COUNT = win_count
-                        print(f' CUMULATIVE_REWARD: {self.CUMULATIVE_REWARD}')
-                        print(f' WIN_COUNT: {self.WIN_COUNT}')
-
-                        status_rda = robotDoAction(self.velPub, self.action)
-
-                        self.ep_reward = self.ep_reward + reward
-                        self.ep_reward_arr = np.append(self.ep_reward_arr, reward)
-                        self.prev_lidar = lidar
-                        self.prev_action = self.action
-                        self.prev_state_ind = state_ind
-
-                        ( current_x , current_y ) = getPosition(odomMsg)
-                        self.prev_position = (current_x, current_y)
-
+                self.close()
+               
 
 def main(ep_count, args=None):
     rclpy.init(args=args)

@@ -71,8 +71,9 @@ def getReward(  action,
     else:
         reward += - .69
 
-    # Crash panelty
+
     if crash:
+        terminal_state = True
         reward += -500
 
     # facing wall panelty/rewards
@@ -106,11 +107,8 @@ def getReward(  action,
     elif angle_state == 1:
         reward += 5
 
-    elif angle_state == 2:
-        reward += 1
-
-    elif angle_state == 3:
-        reward += 1
+    else:
+        reward += - 1
 
     # calculate distance reward
     reward +=  3* (np.exp(-dist) - np.exp(-max_radius)) / (1 - np.exp(-max_radius))
