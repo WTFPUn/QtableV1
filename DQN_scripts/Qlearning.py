@@ -44,10 +44,10 @@ def getReward(  action,
                 nano_start_time, 
                 nano_current_time, 
                 goal_radius, 
-                angle_state,
-                win_count):
+                angle_state):
 
     terminal_state = False
+    
     # init reward
     reward = 0
 
@@ -97,7 +97,6 @@ def getReward(  action,
     if dist<goal_radius:
         reward += 100
         terminal_state = True
-        win_count += 1
     
     #away from goal panelty
     if angle_state == 0:
@@ -116,5 +115,5 @@ def getReward(  action,
     # calculate distance reward
     reward +=  3* (np.exp(-dist) - np.exp(-max_radius)) / (1 - np.exp(-max_radius))
 
-    return (reward, terminal_state, win_count)
+    return (reward, terminal_state)
 

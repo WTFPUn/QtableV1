@@ -120,7 +120,7 @@ class DQNLearningNode(Node):
 
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=1e-4, amsgrad=True)
-
+        self.memory = ReplayMemory(10000)
         print(f'\n {"start learning_node with":^{MAX_WIDTH*4}}')
         print('-'*100)
         for arg in vars(args_parse):
@@ -196,9 +196,94 @@ class DQNLearningNode(Node):
 
         return (False, None)
     
-    def timer_callback(self):
-            _, msgScan = self.wait_for_message('/scan', LaserScan)
 
+    def where_I_am(self, is_re_episode = False):
+        """
+        """
+        # reset env
+        if is_re_episode:
+            self.reset.call_async(self.dummy_req)
+            self.ep_steps = 0
+            self.ep_reward = 0
+            # cum reward reset
+            self.CUMULATIVE_REWARD = 0
+            self.crash = 0
+            self.robot_in_pos = False
+            self.first_action_taken = False
+            self.terminal_state = False
+            self.episode = self.episode + 1
+
+        # 
+        _, msgScan = self.wait_for_message('/scan', LaserScan)
+        _, odomMsg = self.wait_for_message('/odom', Odometry) 
+        ( current_x , current_y ) = getPosition(odomMsg)
+        ( lidar,_ ) = lidarScan(msgScan)
+        self.is_set_pos = False
+
+        # First acion
+        if not self.first_action_taken:
+                self.prev_position = getPosition(odomMsg)
+                self.first_action_taken = True
+
+        observation  = defineState( lidar = lidar, 
+                                    target_pos = (GOAL_X, GOAL_Y), 
+                                    robot_pose = (current_x, current_y), 
+                                    robot_prev_pose = self.prev_position, 
+                                    max_dist = self.MAX_RADIUS, 
+                                    goal_radius = args_parse.GOAL_RADIUS)
+        
+        self.prev_position = ( current_x , current_y )
+        self.prev_lidar = lidar
+        self.angle_state = observation[-1]
+
+        return observation
+
+    def step(self, action, state):
+        """
+        agent get action to interact with environment simulation
+        """
+        #after take action
+        status_rda = robotDoAction(self.velPub, action)
+        if not status_rda == 'robotDoAction => OK':
+            print('\r\n', status_rda, '\r\n')
+
+        _, msgScan = self.wait_for_message('/scan', LaserScan)
+        _, odomMsg = self.wait_for_message('/odom', Odometry) 
+        ( current_x , current_y ) = getPosition(odomMsg)
+        ( lidar,_ ) = lidarScan(msgScan) 
+        
+        ( reward, terminated) = getReward(   action = action, 
+                                                        prev_action = self.prev_action, 
+                                                        lidar = lidar, 
+                                                        prev_lidar = self.prev_lidar, 
+                                                        crash = self.crash,
+                                                        current_position = (current_x, current_y),
+                                                        goal_position = (GOAL_X, GOAL_Y), 
+                                                        max_radius = self.MAX_RADIUS, 
+                                                        radius_reduce_rate = args_parse.radiaus_reduce_rate, 
+                                                        nano_start_time = (self.get_clock().now() - self.t_ep).nanoseconds / 1e9 ,
+                                                        nano_current_time = self.get_clock().now().nanoseconds, 
+                                                        goal_radius = args_parse.GOAL_RADIUS, 
+                                                        angle_state = self.angle_state)
+        
+        # Whether the truncation condition outside the scope of the MDP is satisfied. 
+        # Typically, this is a timelimit, but could also be used to indicate an agent physically going out of bounds. 
+        # Can be used to end the episode prematurely before a terminal state is reached.
+        if self.CUMULATIVE_REWARD < args_parse.reward_threshold: 
+            truncated = True
+        else:
+            truncated = False 
+
+        observation = self.where_I_am()
+        
+
+        return observation, reward, terminated, truncated
+    
+    def close(self):    
+        raise SystemExit
+    
+
+    def timer_callback(self):
             # find time taken betwwen 2 callbacks
             step_time = (self.get_clock().now() - self.t_step).nanoseconds / 1e9
             self.t_step = self.get_clock().now()
@@ -206,54 +291,19 @@ class DQNLearningNode(Node):
                 text = '\r\nTOO BIG STEP TIME: %.2f s' % step_time
                 print(text)
                 
-                raise SystemExit
+                self.close()
             
             #training....
             if self.episode < args_parse.max_episodes :
-                # simulation time
-                _, odomMsg = self.wait_for_message('/odom', Odometry) 
-                ( current_x , current_y ) = getPosition(odomMsg)
-                ( lidar, angles ) = lidarScan(msgScan)
-                self.is_set_pos = False
-                # First acion
-                if not self.first_action_taken:
-                        self.prev_position = getPosition(odomMsg)
-                        self.first_action_taken = True
-
-                state  = defineState(lidar, 
-                                    (GOAL_X, GOAL_Y), 
-                                    (current_x, current_y), 
-                                    self.prev_position, 
-                                    self.MAX_RADIUS, 
-                                    GOAL_RADIUS)
-                
+                sleep(1)
+                print(f'\n episode {self.episode} of {args_parse.max_episodes}')
+                state = self.where_I_am(is_re_episode = True)
                 state = torch.tensor(state, dtype=torch.float32, device=DEVICE).unsqueeze(0)
 
                 for t in count():
                     action = select_action(state, STEP_DONE, self.policy_net)
-                    status_rda = robotDoAction(self.velPub, action)
-
-                    observation = defineState(lidar, 
-                                    (GOAL_X, GOAL_Y), 
-                                    (current_x, current_y), 
-                                    self.prev_position, 
-                                    self.MAX_RADIUS, 
-                                    GOAL_RADIUS)
-                    
-                    ( reward, self.terminal_state, win_count) = getReward(  action = self.action, 
-                                                                            prev_action = self.prev_action, 
-                                                                            lidar = lidar, 
-                                                                            prev_lidar = self.prev_lidar, 
-                                                                            crash = self.crash,
-                                                                            current_position = (current_x, current_y),
-                                                                            goal_position = (GOAL_X, GOAL_Y), 
-                                                                            max_radius = self.MAX_RADIUS, 
-                                                                            radius_reduce_rate = args_parse.radiaus_reduce_rate, 
-                                                                            nano_start_time = ep_time ,
-                                                                            nano_current_time = self.get_clock().now().nanoseconds, 
-                                                                            goal_radius = args_parse.GOAL_RADIUS, 
-                                                                            angle_state = state[-1], 
-                                                                            win_count = self.WIN_COUNT)
+                    observation, reward, terminated, truncated, _ = self.step(action, state)
+                    self.CUMULATIVE_REWARD += reward
                     reward = torch.tensor([reward], device=DEVICE)
                     done = terminated or truncated
 
@@ -261,10 +311,31 @@ class DQNLearningNode(Node):
                         next_state = None
                     else:
                         next_state = torch.tensor(observation, dtype=torch.float32, device=DEVICE).unsqueeze(0)
+                    
+                    self.memory.push(state, action, next_state, reward)    
                     state = next_state
-                self.prev_position = (current_x, current_y)
-                
-                
+
+                    # Perform one step of the optimization (on the policy network)
+                    optimize_model(policy_net = self.policy_net, 
+                                   target_net = self.target_net, 
+                                   optimizer = self.optimizer,
+                                   memory = self.memory)
+
+                    # Soft update of the target network's weights
+                    # θ′ ← τ θ + (1 −τ )θ′
+                    target_net_state_dict = self.target_net.state_dict()
+                    policy_net_state_dict = self.policy_net.state_dict()
+                    for key in policy_net_state_dict:
+                        target_net_state_dict[key] = policy_net_state_dict[key]*TAU + target_net_state_dict[key]*(1-TAU)
+                    
+                    self.target_net.load_state_dict(target_net_state_dict)
+
+                    if done:### done episode
+                        robotStop(self.velPub)
+                        print(f"\n End of episode. step: {self.ep_steps}")
+                        print(f' CUMULATIVE_REWARD: {self.CUMULATIVE_REWARD}')
+                        torch.save(self.policy_net.state_dict(), args_parse.DQN_source_dir)
+                        break
             
             else:
 
@@ -279,11 +350,6 @@ class DQNLearningNode(Node):
                     print(f"\n End of episode. step: {self.ep_steps}")
                     print(f' CUMULATIVE_REWARD: {self.CUMULATIVE_REWARD}')
                     print(f' WIN_COUNT: {self.WIN_COUNT}')
-                    # if self.crash:
-                    #     # get crash position
-                    #     _, odomMsg = self.wait_for_message('/odom', Odometry)
-                    #     ( x_crash , y_crash ) = getPosition(odomMsg)
-                    #     theta_crash = degrees(getRotation(odomMsg))
 
                     self.t_ep = self.get_clock().now()
                     self.reward_min = np.min(self.ep_reward_arr)
