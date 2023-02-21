@@ -39,6 +39,7 @@ class Goal(Node):
         self.entity = open(self.entity_path, 'r').read()
         self.entity_name = 'goal'
 
+        # manually change these to set goal (create publisher to be automatic)
         self.goal_pose_x = 0.5
         self.goal_pose_y = 0.0
 
