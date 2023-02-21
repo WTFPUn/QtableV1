@@ -40,7 +40,7 @@ MIN_TIME_BETWEEN_ACTIONS = 0.0
 MAX_EPISODES_BEFORE_SAVE = 5
 
 # Learning parameters
-ALPHA = 0.1
+ALPHA = 0.5
 GAMMA = 0.9
 
 T_INIT = 25
@@ -125,7 +125,6 @@ if is_rand:
 else:
     (GOAL_X, GOAL_Y, GOAL_THETA) = tuple(args_parse.GOAL_POSITION)
 
-WIN_COUNT = 0.0
 
 
 class LearningNode(Node):
@@ -166,8 +165,6 @@ class LearningNode(Node):
         #     self.log_sim_params = open(args_parse.log_file_dir +'/LogParams.txt','w')
         # Init log files
 
-        
-        print()
         # input("Press enter to continue...")
         self.log_sim_info = open(args_parse.log_file_dir +'/LogInfo.txt','a')
         self.log_sim_params = open(args_parse.log_file_dir +'/LogParams.txt','a')
@@ -208,7 +205,6 @@ class LearningNode(Node):
         self.t_per_episode = np.array([])
 
         self.CUMULATIVE_REWARD = CUMULATIVE_REWARD
-        self.WIN_COUNT = WIN_COUNT
         self.terminal_state = False
         self.is_set_pos = False
     
@@ -374,7 +370,6 @@ class LearningNode(Node):
                     robotStop(self.velPub)
                     print(f"\n End of episode. step: {self.ep_steps}")
                     print(f' CUMULATIVE_REWARD: {self.CUMULATIVE_REWARD}')
-                    print(f' WIN_COUNT: {self.WIN_COUNT}')
                     # if self.crash:
                     #     # get crash position
                     #     _, odomMsg = self.wait_for_message('/odom', Odometry)
@@ -481,13 +476,24 @@ class LearningNode(Node):
                         ( lidar, angles ) = lidarScan(msgScan)                              #just added
                         
 
-                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, lidar, (self.GOAL_X, self.GOAL_Y), (current_x, current_y),self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
+                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, 
+                                                                                        lidar, 
+                                                                                        (self.GOAL_X, self.GOAL_Y), 
+                                                                                        (current_x, current_y),
+                                                                                         self.prev_position,
+                                                                                         args_parse.GOAL_RADIUS)
                         self.crash = checkCrash(lidar)
 
                         if args_parse.exploration_func == 1 :
-                            ( self.action, status_strat ) = softMaxSelection(self.Q_table, state_ind, self.actions, self.T)
+                            ( self.action, status_strat ) = softMaxSelection(self.Q_table,
+                                                                            state_ind,
+                                                                            self.actions,
+                                                                            self.T)
                         else:
-                            ( self.action, status_strat ) = epsiloGreedyExploration(self.Q_table, state_ind, self.actions, self.EPSILON)
+                            ( self.action, status_strat ) = epsiloGreedyExploration(self.Q_table,
+                                                                                    state_ind,
+                                                                                    self.actions,
+                                                                                    self.EPSILON)
 
                         status_rda = robotDoAction(self.velPub, self.action)
 
@@ -516,27 +522,32 @@ class LearningNode(Node):
                         _, odomMsg = self.wait_for_message('/odom', Odometry)
                         yaw = getRotation(odomMsg)
 
-
-                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7) = scanDiscretization(self.state_space, lidar, (self.GOAL_X, self.GOAL_Y), (current_x, current_y),self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
+                        print(GOAL_RADIUS)
+                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7) = scanDiscretization(self.state_space, 
+                                                                                        lidar, 
+                                                                                        (self.GOAL_X, self.GOAL_Y), 
+                                                                                        (current_x, current_y),
+                                                                                         self.prev_position,
+                                                                                         args_parse.GOAL_RADIUS)
                         self.crash = checkCrash(lidar)
                         
                         # radius caculated by norm of  and goal position
                     
                         # ( reward, terminal_state ) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash)
                         # getReward(action, prev_action,lidar, prev_lidar, crash, current_position, goal_position, max_radius, args_parse.radiaus_reduce_rate, nano_start_time, nano_current_time):
-                        ( reward, self.terminal_state, win_count) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash,
-                                                                   (current_x, current_y),
-                                                                    # self.prev_position,
-                                                                     (self.GOAL_X, self.GOAL_Y), 
-                                                                    self.MAX_RADIUS, args_parse.radiaus_reduce_rate, ep_time ,
-                                                                    self.get_clock().now().nanoseconds, 
-                                                                    args_parse.GOAL_RADIUS, self.WIN_COUNT, x4)
+                        ( reward, self.terminal_state) = getReward(self.action,
+                                                                    self.prev_action,
+                                                                    self.crash,
+                                                                    (current_x, current_y),
+                                                                    (self.GOAL_X, self.GOAL_Y), 
+                                                                    self.MAX_RADIUS,
+                                                                    args_parse.GOAL_RADIUS,
+                                                                    self.ep_steps,
+                                                                    [x1, x2, x3, x4, x5, x6, x7])
                         
                         self.CUMULATIVE_REWARD += reward
-                        self.WIN_COUNT = win_count
                         print(f' CUMULATIVE_REWARD: {self.CUMULATIVE_REWARD}')
                         # print(f' Position : {getPosition(odomMsg)}')
-                        # print(f' WIN_COUNT: {self.WIN_COUNT}')
                         # print("time: ", self.get_clock().now().nanoseconds)
                         ( self.Q_table, status_uqt ) = updateQTable(self.Q_table, self.prev_state_ind, self.action, reward, state_ind, self.alpha, self.gamma)
 

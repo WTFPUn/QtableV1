@@ -9,14 +9,14 @@ MAX_LIDAR_DISTANCE = .8
 COLLISION_DISTANCE = 0.125 # LaserScan.range_min = 0.1199999
 NEARBY_DISTANCE = 0.45
 
-ZONE_0_LENGTH = .15
-ZONE_1_LENGTH = .4
+ZONE_0_LENGTH = .2
+ZONE_1_LENGTH = .5
 
 ANGLE_MAX = 360  #360  degree
 ANGLE_MIN = 1 - 1   #0 degree
 ANGLE_BACK = 180  #180 degree_
 # HORIZON_WIDTH = 75  #original
-HORIZON_WIDTH = [9, 16, 65, 9] #9:x1, x2, x7   16:x3, x4   25:x5, x6 
+# HORIZON_WIDTH = [9, 16, 65, 9] #9:x1, x2, x7   16:x3, x4   25:x5, x6 
 
 # Convert LasecScan msg to array
 def lidarScan(msgScan):
@@ -41,110 +41,68 @@ def lidarScan(msgScan):
     # distances in [m], angles in [degrees]
     return ( distances, angles )
 
+def LidarGoGoPowerRanger(lidarVal):
+    if lidarVal > ZONE_1_LENGTH:
+        return 2
+    elif ZONE_1_LENGTH >= lidarVal > ZONE_0_LENGTH:
+        return 1
+    else:
+        return 0
+
+    
+
 # Discretization of lidar scan
-def scanDiscretization(state_space, lidar, target_pos, robot_pose, robot_prev_pose, max_dist, goal_radius):
-    ### now --> 2304*3*4 stage
-    x1 = 1  # no obstacle
-    x2 = 1
+def scanDiscretization(state_space, lidar, target_pos, robot_pose, robot_prev_pose, goal_radius):
+    ### now --> 72*4 stage
+    x1 = 2  # no obstacle
+    x2 = 2
     x3 = 2
     x4 = 2
     x5 = 2 
-    x6 = 1
+    x6 = 2
     x7 = 1
-    # x8 = 2
-    # x8 = 1
+    print()
 
     length_lidar = len(lidar) 
-    # print(f'length_lidar: {length_lidar}')
     ratio = length_lidar / 360 
+    Angle_det = 24
+    # Lidar discretization
     
-    ###############################################################################
-    ##HORIZON_WIDTH[0] --> 9 degree :x1, x8
-    # lidar_x1 = min(lidar[81: 90])
-    lidar_x1 = min(lidar[round(ratio*(ANGLE_MIN + HORIZON_WIDTH[1] + HORIZON_WIDTH[2])): round(ratio*(ANGLE_MIN + HORIZON_WIDTH[1] + HORIZON_WIDTH[2] + HORIZON_WIDTH[3])) ])
-    if ZONE_0_LENGTH <= lidar_x1 <= ZONE_1_LENGTH:
-        x1 = 0
-    else: 
-        x1 = 1
+    # Zone 1: 78: 102+1
+    # lidar_x1 = min(lidar[round(ratio*(ANGLE_MAX  - HORIZON_WIDTH[0] ))
+    lidar_x1 = min(lidar[round(ratio*(90- Angle_det/2)): round(ratio*(90+ Angle_det/2+1))])
+    x1 = LidarGoGoPowerRanger(lidar_x1)
 
-    # lidar_x8 = min(lidar[270: 279])
-    lidar_x7 = min(lidar[round(ratio*(ANGLE_MAX - HORIZON_WIDTH[1] - HORIZON_WIDTH[2] - HORIZON_WIDTH[3])):round(ratio*(ANGLE_MAX - HORIZON_WIDTH[1] - HORIZON_WIDTH[2])) ])
-    if ZONE_0_LENGTH <= lidar_x7 <= ZONE_1_LENGTH:
-        x7 = 0
-    else: 
-        x7 = 1
+    # Zone 2: 12: 36+1
+    lidar_x2 = min(lidar[round(ratio*( Angle_det/2 )): round(ratio*(Angle_det/2+ Angle_det+1))])
+    x2 = LidarGoGoPowerRanger(lidar_x2)
 
-    ###############################################################################
-    ##HORIZON_WIDTH[2] --> 65 degree(25 to 90) :x2, x7
-    # lidar_x2 = min(lidar[25: 90])
-    lidar_x2 = min(lidar[round(ratio*(ANGLE_MIN + HORIZON_WIDTH[0] + HORIZON_WIDTH[1])): round(ratio*(ANGLE_MIN + HORIZON_WIDTH[0] + HORIZON_WIDTH[1] + HORIZON_WIDTH[2] ))])
-    if ZONE_0_LENGTH <= lidar_x2:
-        x2 = 0
-    else:
-        x2 = 1
 
-    # lidar_x7 = min(lidar[270: 335])
-    lidar_x6 = min(lidar[round(ratio*(ANGLE_MAX  - HORIZON_WIDTH[0] - HORIZON_WIDTH[1] - HORIZON_WIDTH[2] )):round(ratio*(ANGLE_MAX - HORIZON_WIDTH[0] - HORIZON_WIDTH[1])) ])
-    if ZONE_0_LENGTH <= lidar_x6:
-        x6 = 0
-    else:
-        x6 = 1
+    # Zone 3-1: 0: 12+1
+    lidar_x3_1 = min(lidar[round(ratio*(0)): round(ratio*(Angle_det/2+1))])
+    # Zone 3-2: 348: 360
+    lidar_x3_2 = min(lidar[round(ratio*( 360-Angle_det/2 )): round(ratio*(360))])
+    # Zone 3 result
+    lidar_x3 = min(lidar_x3_1, lidar_x3_2)
+    x3 = LidarGoGoPowerRanger(lidar_x3)
 
-    ###############################################################################
-    ##HORIZON_WIDTH[1] --> 16 degree (9 to 25):x3, x6
-    # lidar_x3 = min(lidar[9: 25])
-    lidar_x3 = min( lidar[round(ratio*(ANGLE_MIN + HORIZON_WIDTH[0])): round(ratio*(ANGLE_MIN + HORIZON_WIDTH[0] + HORIZON_WIDTH[1]))])
-    if ZONE_1_LENGTH < lidar_x3:
-        x3 = 2
-    elif ZONE_0_LENGTH < lidar_x3 < ZONE_1_LENGTH:
-        x3 = 1
-    elif lidar_x3 < ZONE_0_LENGTH:
-        x3 = 0
 
-    # lidar_x6 = min(lidar[335: 351])
-    lidar_x5 = min(lidar[round(ratio*(ANGLE_MAX  - HORIZON_WIDTH[0] - HORIZON_WIDTH[1])):round(ratio*(ANGLE_MAX - HORIZON_WIDTH[0]))])
-    if ZONE_1_LENGTH < lidar_x5:
-        x5 = 2
-    elif ZONE_0_LENGTH < lidar_x5 < ZONE_1_LENGTH:
-        x5 = 1
-    elif lidar_x5 < ZONE_0_LENGTH:
-        x5 = 0
+    # Zone 4: 324:348+1
+    lidar_x4 = min(lidar[round(ratio*( 360-Angle_det/2-Angle_det )): round(ratio*(360-Angle_det/2 +1))])
+    x4 = LidarGoGoPowerRanger(lidar_x4)    
 
-    ###############################################################################
-    ##HORIZON_WIDTH[0] --> 9 degree :x4, x5    
-    # lidar_x4 = min(lidar[351: 10])
-    lidar_x4_1 = min(lidar[ANGLE_MIN: round(ratio*(ANGLE_MIN + HORIZON_WIDTH[0]))])
+    # Zone 5: 258: 282+1
+    lidar_x5 = min(lidar[round(ratio*(270- Angle_det/2)): round(ratio*(270+ Angle_det/2+1))])
+    x5 = LidarGoGoPowerRanger(lidar_x5)
 
-    # from index 351 to 0
-    lidar_x4_2 = min(lidar[350: 360] + lidar[0])
-    lidar_x4_2 = min(lidar[round(ratio*(ANGLE_MAX  - HORIZON_WIDTH[0] )):round(ratio*(ANGLE_MAX))] + lidar[0])
+    # Zone 6: 168: 192+1
+    lidar_x6 = min(lidar[round(ratio*(180- Angle_det/2)): round(ratio*(180+ Angle_det/2+1))])
+    x6 = LidarGoGoPowerRanger(lidar_x6)
 
-    lidar_x4 = min(lidar_x4_1, lidar_x4_2)
-    if ZONE_1_LENGTH < lidar_x4:
-        x4 = 2
-    elif ZONE_0_LENGTH < lidar_x4 < ZONE_1_LENGTH:
-        x4 = 1
-    elif lidar_x4 < ZONE_0_LENGTH:
-        x4 = 0
-
-    ###############################################################################
-    # distance
-    target_pos = np.array(target_pos)
-    robot_pose = np.array(robot_pose)
-
-    dist = np.linalg.norm(target_pos - robot_pose)
-
-    # if dist > .5 * max_dist:
-    #     x8 = 2
-    # elif dist > 2*goal_radius:
-    #     x8 = 1
-    # else:
-    #     x8 = 0
-    
+    dist = np.linalg.norm(np.array(target_pos) - np.array(robot_pose))
     robot_pose = np.array([robot_pose[0], robot_pose[1]])
     robot_prev_pose = np.array([robot_prev_pose[0], robot_prev_pose[1]])
     target_pos = np.array([target_pos[0], target_pos[1]])
-
     #  vector from robot to target
     d_vec = target_pos - robot_pose
     #  vexor from robot to robot_prev
@@ -153,15 +111,15 @@ def scanDiscretization(state_space, lidar, target_pos, robot_pose, robot_prev_po
     d_vec3d = np.array([d_vec[0], d_vec[1], 0])
     v_vec3d = np.array([v_vec[0], v_vec[1], 0])
 
-    # if np.dot(d_vec, v_vec) < 0:
-    #     x9 = 0 # going back
-    # else:
-    #     if np.arccos(np.dot(d_vec, v_vec) / (np.linalg.norm(d_vec) * np.linalg.norm(v_vec))) < np.arcsin(goal_radius)/dist:
-    #         x9 = 1 # going to target
-    #     elif np.cross(d_vec3d, v_vec3d)[2] < 0:
-    #         x9 = 2  # too much right
-    #     else:
-    #         x9 = 3 # too much left
+    if np.dot(d_vec, v_vec) < 0:
+        x7 = 0 # going back
+    else:
+        if np.arccos(np.dot(d_vec, v_vec) / (np.linalg.norm(d_vec) * np.linalg.norm(v_vec))) < np.arcsin(goal_radius)/dist:
+            x7 = 1 # going to target
+        elif np.cross(d_vec3d, v_vec3d)[2] < 0:
+            x7 = 2  # too much right
+        else:
+            x7 = 3 # too much left
        
 
 

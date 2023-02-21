@@ -6,6 +6,7 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from gazebo_msgs.msg import ModelState
 from math import *
+import math
 import numpy as np
 from tf_transformations import euler_from_quaternion, quaternion_from_euler
 
@@ -14,9 +15,8 @@ CONST_LINEAR_SPEED_FORWARD = 0.1
 CONST_ANGULAR_SPEED_FORWARD = 0.0
 
 CONST_LINEAR_SPEED_TURN = 0.05
+CONST_ANGULAR_SPEED_TURN = math.pi/2
 
-CONST_ANGULAR_SPEED_TURN = 0.5
-CONST_ANGULAR_SPEED_CW = 0.69
 
 # Feedback control parameters
 K_RO = 2
@@ -67,7 +67,7 @@ def robotGoForward(velPub):
 
 # Go 2 x forward command
 def robotGoSuperForward(velPub):
-    velMsg = createVelMsg(3*CONST_LINEAR_SPEED_FORWARD,CONST_ANGULAR_SPEED_FORWARD)
+    velMsg = createVelMsg(2*CONST_LINEAR_SPEED_FORWARD,CONST_ANGULAR_SPEED_FORWARD)
     velPub.publish(velMsg)
 
 # Go backward command

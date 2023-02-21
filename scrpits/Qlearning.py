@@ -7,16 +7,15 @@ from itertools import product
 from sensor_msgs.msg import LaserScan
 import time
 
-STATE_SPACE_IND_MAX = 5184 - 1
+STATE_SPACE_IND_MAX = 2916 - 1
 STATE_SPACE_IND_MIN = 1 - 1
-ACTIONS_IND_MAX = 7
+ACTIONS_IND_MAX = 3
 ACTIONS_IND_MIN = 0
 
 ANGLE_MAX = 360 - 1
 ANGLE_MIN = 1 - 1
-# HORIZON_WIDTH = 75 original
-HORIZON_WIDTH = [9, 16, 56, 9]
 
+# HORIZON_WIDTH = 75 original
 T_MIN = 0.001
 
 # Create actions
@@ -24,19 +23,18 @@ def createActions(n_actions_enable):
     # actions = np.array([0,1,2,3,4,5,6,7])
     actions = np.arange(n_actions_enable)
     return actions
-# forward, left, right,  superForward, backward, stop, CW, CCW
+# forward, left, right,  superForward,
 
 # Create state space for Q table
 def createStateSpace():
-    x1 = set((0,1))
-    x2 = set((0,1))
+    x1 = set((0,1,2))
+    x2 = set((0,1,2))
     x3 = set((0,1,2))
     x4 = set((0,1,2))
     x5 = set((0,1,2))
-    x6 = set((0,1))
-    x7 = set((0,1))
-    # x8 = set((0,1,2))
-    # x9 = set((0,1,2,3))
+    x6 = set((0,1,2))
+    x7 = set((0,1,2,3))
+
     state_space = set(product(x1,x2,x3,x4,x5,x6,x7))
     return np.array(list(state_space))
 
@@ -108,8 +106,8 @@ def softMaxSelection(Q_table, state_ind, actions, T):
             ###################################    
             except:
                 status = 'softMaxSelection => Boltzman distribution error => getBestAction '
-                status = status + '\r\nP = (%f , %f , %f, %f, %f, %f, %f, %f) ' % (P_ac[0],P_ac[1],P_ac[2],P_ac[3],P_ac[4],P_ac[5], P_ac[6], P_ac[7])
-                status = status + '\r\nQ(%d,:) = ( %f , %f , %f, %f, %f, %f, %f, %f) ' % (state_ind, Q_table[state_ind,0], Q_table[state_ind,1], Q_table[state_ind,2], Q_table[state_ind,3], Q_table[state_ind,4], Q_table[state_ind,5], Q_table[state_ind,6], Q_table[state_ind,7])
+                status = status + '\r\nP = (%f , %f , %f, %f, %f, %f, %f, %f) ' % (P_ac[0],P_ac[1],P_ac[2],P_ac[3])
+                status = status + '\r\nQ(%d,:) = ( %f , %f , %f, %f, %f, %f, %f, %f) ' % (state_ind, Q_table[state_ind,0], Q_table[state_ind,1], Q_table[state_ind,2], Q_table[state_ind,3])
                 ( a, status_gba ) = getBestAction(Q_table, state_ind, actions)
                 if status_gba == 'getBestAction => INVALID STATE INDEX':
                     status = 'softMaxSelection => INVALID STATE INDEX'
@@ -121,113 +119,114 @@ def softMaxSelection(Q_table, state_ind, actions, T):
 
 # Reward function for Q-learning - table
 def getReward(  action, 
-                prev_action,
-                lidar, 
-                prev_lidar, 
+                prev_action, 
                 crash, 
                 current_position, 
                 goal_position, 
-                max_radius, 
-                radius_reduce_rate, 
-                nano_start_time, 
-                nano_current_time, 
+                max_radius,   
                 goal_radius, 
-                # angle_state,
-                win_count,
-                x4):
+                n_action,
+                state):
 
     terminal_state = False
     # init reward
     reward = 0
-
-    # to do in learning_node file
-    # add time start for each episode
-    # add position start for each episode
-    # add current position for each step
-    # add goal position for each episode
-    # add max radius for each episode
-    # add radius reduce rate for each episode
     
+    # deconstruct state
+    [x1, x2, x3, x4, x5, x6, x7] = state
+
     # time penalty 
     dist = np.linalg.norm(np.array(current_position) - np.array(goal_position))
     #  nano time diff
-    time_diff = (nano_current_time - nano_start_time)
-    radius = max_radius - radius_reduce_rate * (time_diff)
+    step_factor = (500-n_action) / 500
+    radius = max_radius * step_factor
     if radius/max_radius < 0.1:
         radius = max_radius * 0.1
     if dist < radius:
-        reward += .1
+        reward += 1
     else:
-        reward += - .69
+        reward += -1
 
     # Crash panelty
     if crash:
-        reward += -500
+        reward += -200
         terminal_state = True
-        
-
-    # facing wall panelty/rewards
-    lidar_horizon = np.concatenate((lidar[(ANGLE_MIN + sum(HORIZON_WIDTH[:2])):(ANGLE_MIN):-1],lidar[(ANGLE_MAX):(ANGLE_MAX - sum(HORIZON_WIDTH[:2])):-1]))
-    prev_lidar_horizon = np.concatenate((prev_lidar[(ANGLE_MIN + sum(HORIZON_WIDTH[:2])):(ANGLE_MIN):-1],prev_lidar[(ANGLE_MAX):(ANGLE_MAX - sum(HORIZON_WIDTH[:2])):-1]))
-    W = np.linspace(1, 1.1, len(lidar_horizon) // 2)
-    W = np.append(W, np.linspace(1.1, 1, len(lidar_horizon) // 2))
-    if np.sum( W * ( lidar_horizon - prev_lidar_horizon) ) >= 0:
-        reward += +0.5
+   
+    # penalty if x1 and x5 state is too different(2 level)
+    if abs(x1-x5) ==2 :
+        reward += -3
+    elif abs(x1-x5) ==1 :
+        reward += -1
     else:
+        reward += 0
+
+    # penalty if x3 and x6 state is too different(2 level)
+    if abs(x3-x6) ==2 :
+        reward += -3
+    elif abs(x3-x6) ==1 :
+        reward += -1
+    else:
+        reward += 0
+
+
+    # penalty if x2 on 0 state(almost crash)
+    if x2 ==0 :
+        reward += -3
+    elif x2 ==1 :
         reward += -0.5
-
-    length_lidar = len(lidar) 
-    # print(f'length_lidar: {length_lidar}')
-    ratio = length_lidar / 360 
-    leftLidar = min(lidar[round(ratio*81): round(ratio*91)])
-    rightLidar = min(lidar[round(ratio*270): round(ratio*279)])
-    
-    #  max(leftLidar, rightLidar) - abs(leftLidar - rightLidar)
-    if abs(leftLidar - rightLidar) > max(leftLidar, rightLidar) * .05:
-        reward -= 3*abs(leftLidar - rightLidar)
     else:
-        reward += 0.5
+        reward += 0
+
+    # penalty if x3 on 0 state(almost crash)
+    if x3 ==0 :
+        reward += -3
+    elif x4 ==1 :
+        reward += -0.5
+    else:
+        reward += 1        
+    
+    # penalty if x4 on 0 state(almost crash)
+    if x4 ==0 :
+        reward += -3
+    elif x4 ==1 :
+        reward += -0.5
+    else:
+        reward += 0
         
     # action and prev_action is same and action is left or right
     if (prev_action == 1 and action == 2) or (prev_action == 2 and action == 1):
         reward += -1
 
-    #repeat stop penelty
-    # if prev_action == 2 and action == 2:
-    #         reward += -5
-    if x4 == 2:
-        reward += 2
     #reach goal
     if dist<goal_radius:
         reward += 50
         terminal_state = True
-        win_count += 1
     
 
-    # #away from goal panelty
-    # if angle_state == 0:
-    #     reward += -0.1
+    #away from goal panelty
+    if x7 == 0:
+        reward += -0.5
 
-    # #facing goal reward
-    # elif angle_state == 1:
-    #     reward += 0.3
+    #facing goal reward
+    elif x7 == 1:
+        reward += 1
 
-    # elif angle_state == 2:
-    #     reward += 0.1
+    elif x7 == 2:
+        reward += 0.5
 
-    # elif angle_state == 3:
-    #     reward += 0.1
+    elif x7 == 3:
+        reward += 0.5
 
-    # # if add reward forward or super forward
-    # if action == 0 or action == 3:
-    #     reward += 0.5
-    # else :
-    #     reward += -0.3
+    # if add reward forward or super forward
+    if action == 0 or action == 3:
+        reward += 1
+    else :
+        reward += -0.5
 
     # calculate distance reward
     reward +=  3* (np.exp(-dist) - np.exp(-max_radius)) / (1 - np.exp(-max_radius))
 
-    return (reward, terminal_state, win_count)
+    return (reward, terminal_state)
     
     # if crash:
     #     terminal_state = True
