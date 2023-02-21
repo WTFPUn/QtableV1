@@ -161,12 +161,16 @@ def getReward(  action,
         reward += 0
 
     # penalty if x3 and x6 state is too different(2 level)
-    if abs(x3-x6) ==2 :
-        reward += -3
-    elif abs(x3-x6) ==1 :
+    if x3-x6 ==2 :
+        reward += 3
+    elif x3-x6 ==1 :
+        reward += 1
+    elif x3-x6 ==0 :
+        reward += 0
+    elif x3-x6 == -1 :
         reward += -1
     else:
-        reward += 0
+        reward += -3
 
 
     # penalty if x2 on 0 state(almost crash)
@@ -219,7 +223,7 @@ def getReward(  action,
 
     # if add reward forward or super forward
     if action == 0 or action == 3:
-        reward += 1
+        reward += 3
     else :
         reward += -0.5
 
