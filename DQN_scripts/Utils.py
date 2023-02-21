@@ -5,7 +5,7 @@ from itertools import count
 import numpy as np
 import torch
 import torch.nn as nn
-
+np.random.seed(690)
 ##############################################################################
 # if gpu is to be used
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -36,7 +36,10 @@ class ReplayMemory(object):
 
     def __len__(self):
         return len(self.memory)
-   
+
+def sigmoid(x):
+    return 1./(1. + np.exp(-x)) 
+  
 def select_action(state, steps_done, policy_net):
     eps_threshold = EPS_END + (EPS_START - EPS_END) * math.exp(-1. * steps_done / EPS_DECAY)
     if np.random.uniform() > eps_threshold:
@@ -45,11 +48,18 @@ def select_action(state, steps_done, policy_net):
             # t.max(1) will return the largest column value of each row.
             # second column on max result is index of where max element was
             # found, so we pick action with the larger expected reward.
-            return policy_net(state).max(1)[1].view(1, 1), eps_threshold
+            #return policy_net(state).max(1)[1].view(1, 1), eps_threshold
+            # pred = policy_net(state)
+            # print(f'pred: {pred}  {type(pred)}, {pred.size()}')
+            return policy_net(state)[0], eps_threshold
     else:
         # return torch.tensor([[env.action_space.sample()]], device=DEVICE, dtype=torch.long)
         print(f'get Random Action')
-        return torch.tensor(np.random.randint(5, size = 1), device=DEVICE, dtype=torch.long), eps_threshold
+        #return torch.tensor(np.random.randint(5, size = 1), device=DEVICE, dtype=torch.long), eps_threshold
+        # return torch.tensor(np.random.uniform(0.0, 1.0, size=2), device=DEVICE, dtype=torch.long), eps_threshold
+        return torch.rand(2), eps_threshold
+        # return torch.tensor([random.uniform(0.0, 1.0), random.uniform(0.0, 1.0)], device=DEVICE, dtype=torch.long), eps_threshold
+
     
 
 def optimize_model(policy_net, target_net, optimizer, memory = ReplayMemory(10000), criterion = nn.SmoothL1Loss()):

@@ -53,7 +53,7 @@ GAMMA = 0.9
 CHECKPOINT_DIR = MODULES_PATH + '/Checkpoint'
 
 # Q table source file
-DQN_SOURCE_DIR = CHECKPOINT_DIR + '/DQN_beta.pth'
+DQN_SOURCE_DIR = CHECKPOINT_DIR + '/DQN_beta_up2u.pth'
 
 RADIUS_REDUCE_RATE = .5
 REWARD_THRESHOLD =  -200
@@ -112,14 +112,17 @@ class DQNLearningNode(Node):
         self.reset.call_async(self.dummy_req)
         self.actions = createActions(args_parse.n_actions_enable)
         self.state_space = createStateSpace()
-        self.policy_net = DQN(n_observations = len(self.state_space), n_actions = len(self.actions)).to(DEVICE)
-        self.target_net = DQN(n_observations = len(self.state_space), n_actions = len(self.actions)).to(DEVICE)
+        # self.policy_net = DQN(n_observations = len(self.state_space), n_actions = len(self.actions)).to(DEVICE)
+        # self.target_net = DQN(n_observations = len(self.state_space), n_actions = len(self.actions)).to(DEVICE)
+        self.policy_net = DQN().to(DEVICE)
+        self.target_net = DQN().to(DEVICE)
 
         if args_parse.resume:
                 self.policy_net.load_state_dict(torch.load(args_parse.DQN_source_dir))
 
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=1e-4, amsgrad=True)
+        self.loss_fnc = nn.SmoothL1Loss()
         self.memory = ReplayMemory(10000)
         print(f'\n {"start learning_node with":^{MAX_WIDTH*4}}')
         print('-'*100)
@@ -263,9 +266,10 @@ class DQNLearningNode(Node):
         agent get action to interact with environment simulation
         """
         #after take action
-        status_rda = robotDoAction(self.velPub, action)
+        # status_rda = robotDoAction(self.velPub, action)
+        status_rda = robotUp2U(self.velPub, sigmoid(float(action[0].item())), float(action[1].item()))
         #if not status_rda == 'robotDoAction => OK':
-        print('\r\n', status_rda, '\r\n')
+        # print('\r\n', status_rda, '\r\n')
 
         _, msgScan = self.wait_for_message('/scan', LaserScan)
         _, odomMsg = self.wait_for_message('/odom', Odometry) 
@@ -298,9 +302,9 @@ class DQNLearningNode(Node):
         self.prev_position = ( current_x , current_y )
         self.prev_lidar = lidar
         self.prev_action = action
-        print(f'\n state: {state} , type: {type(state)}')
+        # print(f'\n state: {state} , type: {type(state)}')
         self.angle_state = state[0][-1].numpy()
-        print(f'\n self.angle_state: {self.angle_state}, type: {type(self.angle_state)}')
+        # print(f'\n self.angle_state: {self.angle_state}, type: {type(self.angle_state)}')
 
         observation = self.where_I_am()
         
@@ -329,16 +333,16 @@ class DQNLearningNode(Node):
                 state = torch.tensor(state, dtype=torch.float32, device=DEVICE).unsqueeze(0)
                 STEP_DONE = 0.0
                 for t in count():
-                    print(f'STEP_DONE: {STEP_DONE}')
+                    # print(f'STEP_DONE: {STEP_DONE}')
                     action, eps_threshold = select_action(state, STEP_DONE, self.policy_net)
                     STEP_DONE += 1
-                    print(f'eps_threshold: {eps_threshold}  , {type(eps_threshold)}')
-                    print(f'action: {action.numpy()}  , {type(action)}')
+                    # print(f'eps_threshold: {eps_threshold}  , {type(eps_threshold)}')
+                    print(f'action-> LINEAR_SPEED: {sigmoid(float(action[0].item()))},  ANGULAR_SPEED: {float(action[1].item())}')
                     observation, reward, terminated, truncated = self.step(action, state)
                     self.CUMULATIVE_REWARD += reward
                     print(f' CUMULATIVE_REWARD: {self.CUMULATIVE_REWARD}')
                     reward = torch.tensor([reward], device=DEVICE)
-                    print(f'terminated: {terminated} truncated: {truncated}')
+                    # print(f'terminated: {terminated} truncated: {truncated}')
                     done = terminated or truncated
 
                     if terminated:
@@ -346,10 +350,10 @@ class DQNLearningNode(Node):
                     else:
                         next_state = torch.tensor(observation, dtype=torch.float32, device=DEVICE).unsqueeze(0)
                     
-                    print(f'\n state: {state}, \
-                          \n action: {action}, \
-                          \n next_state: {next_state}, \
-                          \n reward: {reward}')
+                    # print(f'\n state: {state}, \
+                        #   \n action: {action}, \
+                        #   \n next_state: {next_state}, \
+                        #   \n reward: {reward}')
                     self.memory.push(state, action, next_state, reward)    
                     state = next_state
 
@@ -357,8 +361,9 @@ class DQNLearningNode(Node):
                     optimize_model(policy_net = self.policy_net, 
                                    target_net = self.target_net, 
                                    optimizer = self.optimizer,
-                                   memory = self.memory)
-                    print(f'optimize done')
+                                   memory = self.memory,
+                                   criterion = self.loss_fnc)
+                    # print(f'optimize done')
 
                     # Soft update of the target network's weights
                     # θ′ ← τ θ + (1 −τ )θ′

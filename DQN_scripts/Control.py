@@ -15,6 +15,7 @@ CONST_LINEAR_SPEED_TURN = 0.05
 
 CONST_ANGULAR_SPEED_TURN = 0.5
 
+ALPHA = 0.8
 
 # Get theta in [radians]
 def getRotation(odomMsg):
@@ -50,7 +51,7 @@ def createVelMsg(v,w):
 
 #######################################################
 def robotUp2U(velPub, LINEAR_SPEED, ANGULAR_SPEED):   #
-    velMsg = createVelMsg(LINEAR_SPEED, ANGULAR_SPEED)#
+    velMsg = createVelMsg(ALPHA*LINEAR_SPEED, ANGULAR_SPEED*(np.pi/4.))#
     velPub.publish(velMsg)                            #
 #######################################################
 

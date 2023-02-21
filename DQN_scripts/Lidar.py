@@ -148,36 +148,38 @@ def defineState(lidar,
     target_pos = np.array(target_pos)
     robot_pose = np.array(robot_pose)
 
-    dist = np.linalg.norm(target_pos - robot_pose)
+    # dist = np.linalg.norm(target_pos - robot_pose)
+    x9 = np.linalg.norm(target_pos - robot_pose)
 
-    if dist > .5 * max_dist:
-        x9 = 0
-    elif dist > 2*goal_radius:
-        x9 = 0.5
-    else:
-        x9 = 1
+    # if dist > .5 * max_dist:
+    #     x9 = 0
+    # elif dist > 2*goal_radius:
+    #     x9 = 0.5
+    # else:
+    #     x9 = 1
     
     robot_pose = np.array([robot_pose[0], robot_pose[1]])
     robot_prev_pose = np.array([robot_prev_pose[0], robot_prev_pose[1]])
     target_pos = np.array([target_pos[0], target_pos[1]])
 
-    #  vector from robot to target
+    # #  vector from robot to target
     d_vec = target_pos - robot_pose
     #  vexor from robot to robot_prev
     v_vec = robot_pose - robot_prev_pose
 
-    d_vec3d = np.array([d_vec[0], d_vec[1], 0])
-    v_vec3d = np.array([v_vec[0], v_vec[1], 0])
+    x10 = np.arccos(np.dot(d_vec, v_vec) / (np.linalg.norm(d_vec) * np.linalg.norm(v_vec)))
+    # d_vec3d = np.array([d_vec[0], d_vec[1], 0])
+    # v_vec3d = np.array([v_vec[0], v_vec[1], 0])
 
-    if np.dot(d_vec, v_vec) < 0:
-        x10 = 0 # going back
-    else:
-        if np.arccos(np.dot(d_vec, v_vec) / (np.linalg.norm(d_vec) * np.linalg.norm(v_vec))) < np.arcsin(goal_radius)/dist:
-            x10 = 1 # going to target
-        elif np.cross(d_vec3d, v_vec3d)[2] < 0:
-            x10 = 0.5  # too much right
-        else:
-            x10 = 0.5 # too much left
+    # if np.dot(d_vec, v_vec) < 0:
+    #     x10 = 0 # going back
+    # else:
+    #     if np.arccos(np.dot(d_vec, v_vec) / (np.linalg.norm(d_vec) * np.linalg.norm(v_vec))) < np.arcsin(goal_radius)/dist:
+    #         x10 = 1 # going to target
+    #     elif np.cross(d_vec3d, v_vec3d)[2] < 0:
+    #         x10 = 0.5  # too much right
+    #     else:
+    #         x10 = 0.5 # too much left
 
     return np.array([x1, x2, x3, x4, x5, x6, x7, x8, x9, x10], dtype = np.float32)
 
