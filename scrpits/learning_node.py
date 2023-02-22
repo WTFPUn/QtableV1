@@ -46,10 +46,11 @@ GAMMA = 0.9
 
 T_INIT = 25
 T_GRAD = 0.95
+
 T_MIN = 0.001
 
-EPSILON_INIT = 0.1
-EPSILON_GRAD = 0.96
+EPSILON_INIT = 0.5
+EPSILON_GRAD = 0.92
 EPSILON_MIN = 0.05
 
 # 1 - Softmax , 2 - Epsilon greedy
@@ -560,7 +561,8 @@ class LearningNode(Node):
                                                                     self.MAX_RADIUS,
                                                                     args_parse.GOAL_RADIUS,
                                                                     self.ep_steps,
-                                                                    [x1, x2, x3, x4, x5, x6, x7])
+                                                                    [x1, x2, x3, x4, x5, x6, x7]
+                                                                    ,lidar)
                         
                         self.CUMULATIVE_REWARD += reward
                         print(f' CUMULATIVE_REWARD: {self.CUMULATIVE_REWARD}')

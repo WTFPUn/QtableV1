@@ -15,7 +15,7 @@ print(cwd)
 cwd = os.path.dirname(cwd)
 print(cwd)
 
-# cwd= 'Qtable/QtableV1'
+cwd= 'Qtable/QtableV1'
 
 # TODO: Change to proper PATH
 DATA_PATH = os.path.join(cwd, 'Data')
@@ -217,7 +217,7 @@ class ControlNode(Node):
                 if len(self.queuePos) == 5:
                     posIsSame = all(cond == self.queuePos[0] for cond in self.queuePos)
                     self.queuePos.pop(0)
-                # Stop the simulation
+                # if crash. go backward
                 if crash:
                     # robotStop(self.velPub)
                     robotGoBackward(self.velPub)

@@ -126,7 +126,10 @@ def getReward(  action,
                 max_radius,   
                 goal_radius, 
                 n_action,
-                state):
+                state,
+                lidar
+                ):
+
 
     terminal_state = False
     # init reward
@@ -229,7 +232,29 @@ def getReward(  action,
 
     # calculate distance reward
     reward +=  3* (np.exp(-dist) - np.exp(-max_radius)) / (1 - np.exp(-max_radius))
+    
+    # length_lidar = len(lidar) 
+    # ratio = length_lidar / 360 
+    # Angle_det = 24
+    # lidar_x1 = min(lidar[round(ratio*(90- Angle_det/2)): round(ratio*(90+ Angle_det/2+1))])
+    # lidar_x5 = min(lidar[round(ratio*(270- Angle_det/2)): round(ratio*(270+ Angle_det/2+1))])
 
+    if x3 == 1:
+        if x1 >= x5 and x1 >=1:
+            if action == 2:
+                reward += 3
+            else : 
+                reward += -1
+        elif x1 <= x5 and x5 >=1:
+            if action == 1:
+                reward += 3
+            else : 
+                reward += -1
+    # print("x3 is: ", x3, "\nx1: ", x1 , "x5: ", x5)
+
+
+        # if max(lidar_x1, lidar_x5) == lidar_x1 and action == 2 :
+        
     return (reward, terminal_state)
 
 
