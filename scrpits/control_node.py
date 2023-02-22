@@ -105,6 +105,7 @@ class ControlNode(Node):
         self.t_step = self.get_clock().now()
         self.robot_in_pos = False
         self.count = 0
+        self.Angle_det = 24
 
     def wait_for_message(
         node,
@@ -207,11 +208,17 @@ class ControlNode(Node):
                 # Get lidar scan
                 ( lidar, angles ) = lidarScan(msgScan)
                 # ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, lidar)
-                ( state_ind, x1, x2, x3 , x4 , x5 , x6 , x7) = scanDiscretization(self.state_space, lidar, (X_GOAL, Y_GOAL), (x, y), self.prev_position, GOAL_RADIUS)
-                # ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9, x10 ) = scanDiscretization(self.state_space, lidar, (X_GOAL, Y_GOAL), (x, y), self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
-                # ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9 ) = scanDiscretization(self.state_space, lidar, (X_GOAL, Y_GOAL), (x, y), self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
+            
+                length_lidar = len(lidar) 
+                ratio = length_lidar / 360 
+            
+                ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, lidar, (X_GOAL, Y_GOAL), (x, y), self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
                 
-    
+                # get lidar value from x1 and x5 Zone
+                lidar_x1 = min(lidar[round(ratio*(90- self.Angle_det/2)): round(ratio*(90+ self.Angle_det/2+1))])
+                lidar_x5 = min(lidar[round(ratio*(270- self.Angle_det/2)): round(ratio*(270+ self.Angle_det/2+1))])
+                
+
                 # Check for objects nearby
                 crash = checkCrash(lidar)
                 object_nearby = checkObjectNearby(lidar)
@@ -219,17 +226,27 @@ class ControlNode(Node):
                 enable_feedback_control = True
 
                 # Stop the simulation
-                # if crash:
-                #     robotStop(self.velPub)
-                #     text = text + ' ==> Crash! End of simulation!'
-                #     status = 'Crash! End of simulation!'
-                #     raise SystemExit
+                if crash:
+                    # robotStop(self.velPub)
+                    robotGoBackward(self.velPub)
+                    if max(lidar_x1, lidar_x5) == lidar_x1:
+                        robotCCW(self.velPub)
+                    else :
+                        robotCW(self.velPub)
+                    text = text + ' ==> Crash! backward'
+                    status = 'Crash! backward'
+
                 # Feedback control algorithm
-                if enable_feedback_control and ( not object_nearby ): # or goal_near ):
+                elif enable_feedback_control and ( not object_nearby and goal_near ):
                     status = robotFeedbackControl(self.velPub, x, y, theta, X_GOAL, Y_GOAL, radians(THETA_GOAL))
                     text = text + ' ==> Feedback control algorithm '
                     if goal_near:
                         text = text + '(goal near)'
+                
+                # go go powerranger algorithm
+                elif x1 == x5 and x3 == 2  :
+                    robotGoSuperForward(self.velPub)
+                
                 # Q-learning algorithm
                 else:
                     ( action, status ) = getBestAction(self.Q_table, state_ind, self.actions)
