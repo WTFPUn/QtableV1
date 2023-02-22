@@ -1,13 +1,13 @@
 # QtableV1
 
-## --welocomeToV2--- ##
+## --welocomeToV4--- ##
 
 Copy&Run command
 
 Example:
 
 ```terminal
-python3 learning_node.py --n_actions_enable 3 --GOAL_POSITION .03  1.9777  .0
+python3 learning_node.py --n_actions_enable 4 --GOAL_POSITION .03  1.9777  .0
 ```
 
 ## Args Options
