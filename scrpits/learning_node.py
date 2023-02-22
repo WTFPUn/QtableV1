@@ -47,7 +47,7 @@ T_INIT = 25
 T_GRAD = 0.95
 T_MIN = 0.001
 
-EPSILON_INIT = 0.5
+EPSILON_INIT = 0.1
 EPSILON_GRAD = 0.96
 EPSILON_MIN = 0.05
 
@@ -522,7 +522,7 @@ class LearningNode(Node):
                         _, odomMsg = self.wait_for_message('/odom', Odometry)
                         yaw = getRotation(odomMsg)
 
-                        print(GOAL_RADIUS)
+                        # print(GOAL_RADIUS)
                         ( state_ind, x1, x2, x3 , x4 , x5, x6, x7) = scanDiscretization(self.state_space, 
                                                                                         lidar, 
                                                                                         (self.GOAL_X, self.GOAL_Y), 
