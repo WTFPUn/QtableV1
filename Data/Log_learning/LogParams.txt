@@ -948,3 +948,8 @@ Simulation time: 0:4:40  h/m/s
 MAX EPISODES REACHED(10), LEARNING FINISHED
 Simulation time: 0:8:8  h/m/s 
 
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:4:6  h/m/s 
+
