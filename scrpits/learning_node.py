@@ -4,6 +4,7 @@ import rclpy
 from time import time
 from time import sleep
 # import time
+import math
 from datetime import datetime
 import matplotlib.pyplot as plt
 from rclpy.node import Node
@@ -57,7 +58,7 @@ EXPLORATION_FUNCTION = 1
 # Initial position
 X_INIT = -2.0
 Y_INIT = -0.0
-THETA_INIT = 0.0
+THETA_INIT = 180.0
 
 RANDOM_INIT_POS = False
 
@@ -328,6 +329,7 @@ class LearningNode(Node):
             
             # End of Learning
             if self.episode > args_parse.max_episodes :#or self.terminal_state:
+            
                 # simulation time
                 self.is_set_pos = False
                 # self.MAX_RADIUS = np.linalg.norm([X_INIT - GOAL_X, Y_INIT - GOAL_Y])
@@ -462,6 +464,21 @@ class LearningNode(Node):
                         
                         # theta = degrees(getRotation(odomMsg))
                         # check init pos
+                        # For rotating 180 
+
+
+
+                        # self.timer_period = 1.0
+                        # velMsg = createVelMsg(0.0, -2*math.pi)
+                        # self.velPub.publish(velMsg)
+                        # self.timer_period = .5
+
+
+
+                        # for _ in range(8):
+                        #     print("Rotating")
+                        #     robotCCW(self.velPub)
+                        #     sleep(.5)
                         self.is_set_pos = True
                         # if abs(x-x_init) < 0.01 and abs(y-y_init) < 0.01 and abs(theta-theta_init) < 1:
                         #     self.robot_in_pos = True
