@@ -7,7 +7,7 @@ from sensor_msgs.msg import LaserScan
 
 MAX_LIDAR_DISTANCE = 3.5
 COLLISION_DISTANCE = 0.125 # LaserScan.range_min = 0.1199999
-NEARBY_DISTANCE = 0.45
+NEARBY_DISTANCE = 0.2
 
 
 ANGLE_MAX = 360 - 1  #360  degree

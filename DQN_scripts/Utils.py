@@ -5,6 +5,11 @@ from itertools import count
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.autograd import Variable
+from collections import deque
+
+# create a deque object to represent the queue
+queue = deque()
 np.random.seed(690)
 ##############################################################################
 # if gpu is to be used
@@ -12,7 +17,8 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
-BATCH_SIZE = 128
+ALPHA = 0.8
+BATCH_SIZE = 8
 GAMMA = 0.99
 EPS_START = 0.9
 EPS_END = 0.05
@@ -39,11 +45,26 @@ class ReplayMemory(object):
 
 def sigmoid(x):
     return 1./(1. + np.exp(-x)) 
-  
+
+def catergory(x):
+    return int(1) if sigmoid(x) > 0.5 else int(0)
+
+def add_to_queue(value):
+    queue.append(value)
+    if len(queue) > 10:
+        queue.popleft()
+
+def apply_func(tensor):
+    tensor[:, 0].detach().apply_(catergory)
+    tensor[:, 1] = ALPHA*tensor[:, 1].detach().apply_(sigmoid)
+    tensor[:, 2] = (np.pi/4.)*tensor[:, 2]
+    return Variable(tensor.type(torch.float64), requires_grad = True)
+
 def select_action(state, steps_done, policy_net):
     eps_threshold = EPS_END + (EPS_START - EPS_END) * math.exp(-1. * steps_done / EPS_DECAY)
     if torch.rand(1) > eps_threshold:
         print(f'get Best Action')
+        action_status = 'get Best Action'
         with torch.no_grad():
             # t.max(1) will return the largest column value of each row.
             # second column on max result is index of where max element was
@@ -51,16 +72,16 @@ def select_action(state, steps_done, policy_net):
             #return policy_net(state).max(1)[1].view(1, 1), eps_threshold
             # pred = policy_net(state)
             # print(f'pred: {pred}  {type(pred)}, {pred.size()}')
-            return policy_net(state)[0], eps_threshold
+            return policy_net(state)[0], action_status
     else:
         # return torch.tensor([[env.action_space.sample()]], device=DEVICE, dtype=torch.long)
         print(f'get Random Action')
+        action_status = 'get Random Action'
         #return torch.tensor(np.random.randint(5, size = 1), device=DEVICE, dtype=torch.long), eps_threshold
         # return torch.tensor(np.random.uniform(0.0, 1.0, size=2), device=DEVICE, dtype=torch.long), eps_threshold
-        return torch.rand(2), eps_threshold
+        return torch.tensor([np.random.randint(2), torch.rand(1), 2*torch.rand(1) - 1], device=DEVICE).view(3), action_status
         # return torch.tensor([random.uniform(0.0, 1.0), random.uniform(0.0, 1.0)], device=DEVICE, dtype=torch.long), eps_threshold
 
-    
 
 def optimize_model(policy_net, target_net, optimizer, memory = ReplayMemory(10000), criterion = nn.SmoothL1Loss()):
     if len(memory) < BATCH_SIZE:
@@ -78,13 +99,24 @@ def optimize_model(policy_net, target_net, optimizer, memory = ReplayMemory(1000
     non_final_next_states = torch.cat([s for s in batch.next_state
                                                 if s is not None])
     state_batch = torch.cat(batch.state)
-    action_batch = torch.cat(batch.action)
+    # print(f'state_batch: size {state_batch.size()}  {state_batch}')
+    action_batch = torch.cat(batch.action).view(BATCH_SIZE, 3)
+    # print(f'action_batch: size {action_batch.size()}  {action_batch}')
     reward_batch = torch.cat(batch.reward)
 
     # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
     # columns of actions taken. These are the actions which would've been taken
     # for each batch state according to policy_net
-    state_action_values = policy_net(state_batch).gather(1, action_batch)
+    tensor = policy_net(state_batch)
+    with torch.no_grad():
+        tensor[:, 0].detach().apply_(catergory)
+        tensor[:, 1] = ALPHA*tensor[:, 1].detach().apply_(sigmoid)
+        tensor[:, 2] = (np.pi/4.)*tensor[:, 2].detach().apply_(np.tanh)
+
+    state_action_values =  Variable(tensor.type(torch.float64), requires_grad = True)
+    # print(f'state_action_values: size {state_action_values.size()}  {state_action_values}')
+    state_action_values = state_action_values.gather( 1, action_batch.long())
+    # print('state_action_values: ', state_action_values.size())
 
     # Compute V(s_{t+1}) for all next states.
     # Expected values of actions for non_final_next_states are computed based
@@ -106,3 +138,5 @@ def optimize_model(policy_net, target_net, optimizer, memory = ReplayMemory(1000
     # In-place gradient clipping
     torch.nn.utils.clip_grad_value_(policy_net.parameters(), 100)
     optimizer.step()
+
+    return loss

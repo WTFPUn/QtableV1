@@ -32,19 +32,13 @@ def createStateSpace(x = 10):
 
 
 # Reward function for Q-learning - table
-def getReward(  action, 
-                prev_action,
-                lidar, 
-                prev_lidar, 
-                crash, 
+def getReward(  crash, 
                 current_position, 
                 goal_position, 
-                max_radius, 
-                radius_reduce_rate, 
-                nano_start_time, 
-                nano_current_time, 
-                goal_radius, 
-                angle_state):
+                n_action,
+                max_radius,  
+                goal_radius,
+                action_mode):
 
     terminal_state = False
     
@@ -62,54 +56,27 @@ def getReward(  action,
     # time penalty 
     dist = np.linalg.norm(np.array(current_position) - np.array(goal_position))
     #  nano time diff
-    # time_diff = (nano_current_time - nano_start_time)
-    # radius = max_radius - radius_reduce_rate * (time_diff)
-    # if radius/max_radius < 0.1:
-    #     radius = max_radius * 0.1
-    # if dist < radius:
-    #     reward += .1
-    # else:
-    #     reward += - .69
-
+    step_factor = (500-n_action) / 500
+    radius = max_radius * step_factor
+    if radius/max_radius < 0.1:
+        radius = max_radius * 0.1
+    if dist < radius:
+        reward += 1
+    else:
+        reward += -1
+        
+    if action_mode == 'Up2U':
+        reward += -1
 
     if crash:
-        terminal_state = True
+        # terminal_state = True
         reward += -100
-
-    # facing wall panelty/rewards
-    # lidar_horizon = np.concatenate((lidar[(ANGLE_MIN + sum(HORIZON_WIDTH[:2])):(ANGLE_MIN):-1],lidar[(ANGLE_MAX):(ANGLE_MAX - sum(HORIZON_WIDTH[:2])):-1]))
-    # prev_lidar_horizon = np.concatenate((prev_lidar[(ANGLE_MIN + sum(HORIZON_WIDTH[:2])):(ANGLE_MIN):-1],prev_lidar[(ANGLE_MAX):(ANGLE_MAX - sum(HORIZON_WIDTH[:2])):-1]))
-    # W = np.linspace(1, 1.1, len(lidar_horizon) // 2)
-    # W = np.append(W, np.linspace(1.1, 1, len(lidar_horizon) // 2))
-    # if np.sum( W * ( lidar_horizon - prev_lidar_horizon) ) >= 0:
-    #     reward += +0.2
-    # else:
-    #     reward += -0.2
-        
-    # action and prev_action is same and action is left or right
-    # if (prev_action == 3 and action == 4) or (prev_action == 4 and action == 3):
-    #         reward += -5
-
-    # #repeat stop penelty
-    # if prev_action == 2 and action == 2:
-    #         reward += -5
 
     #reach goal
     if dist<goal_radius:
         reward += 100
         terminal_state = True
     
-    #away from goal panelty
-    # if angle_state == 0:
-    #     reward += -1
-
-    # #facing goal reward
-    # elif angle_state == 1:
-    #     reward += 5
-
-    # else:
-    #     reward += - 1
-
     # calculate distance reward
     reward +=  5* (np.exp(-dist) - np.exp(-max_radius)) / (1 - np.exp(-max_radius))
 

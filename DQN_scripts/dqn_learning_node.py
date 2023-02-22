@@ -40,20 +40,19 @@ import os
 # if gpu is to be used
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Episode parameters
-MAX_EPISODES = 10
+MAX_EPISODES = 5000
 MAX_STEPS_PER_EPISODE = 500
 MIN_TIME_BETWEEN_ACTIONS = 0.0
 MAX_EPISODES_BEFORE_SAVE = 5
 
-# Learning parameters
-ALPHA = 0.5
-GAMMA = 0.9
+
+ALPHA = 0.8
 
 # Log file directory
 CHECKPOINT_DIR = MODULES_PATH + '/Checkpoint'
 
 # Q table source file
-DQN_SOURCE_DIR = CHECKPOINT_DIR + '/DQN_beta_new_state.pth'
+DQN_SOURCE_DIR = CHECKPOINT_DIR + '/DQN_beta_new_model.pth'
 
 RADIUS_REDUCE_RATE = .5
 REWARD_THRESHOLD =  -200
@@ -62,14 +61,7 @@ CUMULATIVE_REWARD = 0.0
 GOAL_POSITION = (2., 1., .0)
 GOAL_RADIUS = .1
 
-# edit when chang order in def roboDoAction in Control.py  *****
-ACTIONS_DESCRIPTION = { 0 : 'Forward',
-                        1 : 'CW',
-                        2 : 'CCW',
-                        3 : 'Stop',
-                        4 : 'SuperForward'}
 MAX_WIDTH = 25
-STEP_DONE = 0
 WIN_COUNT = 0
 ########################################################################################################
 
@@ -97,25 +89,30 @@ parser.add_argument('--GOAL_RADIUS', default=GOAL_RADIUS, type=float)
 args_parse = parser.parse_args()
 
 (GOAL_X, GOAL_Y, GOAL_THETA) = tuple(args_parse.GOAL_POSITION)
+########################################################################################################
 
+from collections import deque
+
+# function to add a value to the queue and remove the oldest value if the queue size is greater than 10
+def add_to_queue(value):
+    queue.append(value)
+    if len(queue) > 4:
+        queue.popleft()
 ########################################################################################################
 
 class DQNLearningNode(Node):
     def __init__(self):
         super().__init__('learning_node')
-        self.timer_period = 1 # seconds
+        self.timer_period = 0.5 # seconds
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
         self.reset = self.create_client(Empty, '/reset_simulation')
         self.setPosPub = self.create_publisher(ModelState, 'gazebo/set_model_state', 10)
         self.velPub = self.create_publisher(Twist, 'cmd_vel', 10)
         self.dummy_req = Empty_Request()
         self.reset.call_async(self.dummy_req)
-        # self.actions = createActions(args_parse.n_actions_enable)
-        # self.state_space = createStateSpace()
+
         self.policy_net = DQN(n_observations = 11).to(DEVICE)
         self.target_net = DQN(n_observations = 11).to(DEVICE)
-        # self.policy_net = DQN().to(DEVICE)
-        # self.target_net = DQN().to(DEVICE)
 
         if args_parse.resume:
                 self.policy_net.load_state_dict(torch.load(args_parse.DQN_source_dir))
@@ -124,19 +121,12 @@ class DQNLearningNode(Node):
         self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=1e-4, amsgrad=True)
         self.loss_fnc = nn.SmoothL1Loss()
         self.memory = ReplayMemory(10000)
-        # print(f'\n {"start learning_node with":^{MAX_WIDTH*4}}')
-        # print('-'*100)
-        # for arg in vars(args_parse):
-            # print(f'{arg:<{MAX_WIDTH}}: {str(getattr(args_parse, arg)):<{MAX_WIDTH}}')
 
         print('-'*100)
-        # print(f'\n n_state:  {len(self.state_space)}')
-        # print(f'\n n_actions: {args_parse.n_actions_enable} --> {[ACTIONS_DESCRIPTION[i] for i in range(args_parse.n_actions_enable)]}')
         print(f'\n {"summary policy_net":^{MAX_WIDTH*2}}')
         summary(self.policy_net, input_size = (11,))
         
         print()
-        # input("Press enter to continue...")
         
         # Episodes, steps, rewards
         self.ep_steps = 0
@@ -242,9 +232,9 @@ class DQNLearningNode(Node):
         # First acion
         if not self.first_action_taken:
                 self.prev_lidar = lidar
-                self.prev_position = getPosition(odomMsg)
+                self.prev_position = (-1., 0.)
                 self.prev_action = 0
-                self.angle_state = torch.rand(1)
+                self.angle_state = 2*torch.rand(1) - 1
                 self.first_action_taken = True
 
         observation  = defineState( lidar = lidar, 
@@ -254,41 +244,42 @@ class DQNLearningNode(Node):
                                     max_dist = self.MAX_RADIUS, 
                                     goal_radius = args_parse.GOAL_RADIUS)
         
-        # self.prev_position = ( current_x , current_y )
-        # self.prev_lidar = lidar
-        # self.prev_action = self.action
-        # self.angle_state = observation[-1]
-
         return observation
 
-    def step(self, action, state):
+    def step(self, action, queue):
         """
         agent get action to interact with environment simulation
         """
-        #after take action
-        # status_rda = robotDoAction(self.velPub, action)
-        status_rda = robotUp2U(self.velPub, sigmoid(float(action[0].item())), float(action[1].item()))
-        #if not status_rda == 'robotDoAction => OK':
-        # print('\r\n', status_rda, '\r\n')
+        if len(queue) == 6 and sum(queue[2:]) > 3 : ## [x, x, 1, 1, 1, ?]
+            action_mode = 'Up2U' #int(0)
+        else:    
+            action_mode = catergory(float(action[0].item()))
+
+        print(f'action-> Action mode: {action_mode} LINEAR_SPEED: {ALPHA*sigmoid(float(action[1].item()))},  ANGULAR_SPEED: {float(action[2].item())*(np.pi/4.)}')
+        status_rda =  robotDoAction(velPub=self.velPub, 
+                                    action=action_mode, 
+                                    LINEAR_SPEED=ALPHA*sigmoid(float(action[1].item())), 
+                                    ANGULAR_SPEED=np.tanh(float(action[2].item()))*(np.pi/4.)
+                                    )
 
         _, msgScan = self.wait_for_message('/scan', LaserScan)
         _, odomMsg = self.wait_for_message('/odom', Odometry) 
         ( current_x , current_y ) = getPosition(odomMsg)
         ( lidar,_ ) = lidarScan(msgScan) 
+        if checkObjectNearby(lidar):
+            robotStop(self.velPub)
+            robotGoBackward(self.velPub)
+            sleep(0.5)
+            robotStop(self.velPub)
+        self.crash = checkCrash(lidar)
         
-        ( reward, terminated) = getReward(  action = action, 
-                                            prev_action = self.prev_action, 
-                                            lidar = lidar, 
-                                            prev_lidar = self.prev_lidar, 
-                                            crash = self.crash,
+        ( reward, terminated) = getReward(  crash = self.crash,
                                             current_position = (current_x, current_y),
                                             goal_position = (GOAL_X, GOAL_Y), 
+                                            n_action = self.ep_steps,
                                             max_radius = self.MAX_RADIUS, 
-                                            radius_reduce_rate = args_parse.radiaus_reduce_rate, 
-                                            nano_start_time = (self.get_clock().now() - self.t_ep).nanoseconds / 1e9 ,
-                                            nano_current_time = self.get_clock().now().nanoseconds, 
-                                            goal_radius = args_parse.GOAL_RADIUS, 
-                                            angle_state = self.angle_state)
+                                            goal_radius = args_parse.GOAL_RADIUS,
+                                            action_mode = action_mode)
         
         # Whether the truncation condition outside the scope of the MDP is satisfied. 
         # Typically, this is a timelimit, but could also be used to indicate an agent physically going out of bounds. 
@@ -298,16 +289,7 @@ class DQNLearningNode(Node):
         else:
             truncated = False 
 
-        self.crash = checkCrash(lidar)
-        self.prev_position = ( current_x , current_y )
-        self.prev_lidar = lidar
-        self.prev_action = action
-        # print(f'\n state: {state} , type: {type(state)}')
-        self.angle_state = state[0][-1].numpy()
-        # print(f'\n self.angle_state: {self.angle_state}, type: {type(self.angle_state)}')
-
         observation = self.where_I_am()
-        
 
         return observation, reward, terminated, truncated
     
@@ -323,7 +305,8 @@ class DQNLearningNode(Node):
                 text = '\r\nTOO BIG STEP TIME: %.2f s' % step_time
                 print(text)
                 
-                self.close()
+                # self.close()
+                self.reset.call_async(self.dummy_req)
             
             #training....
             if self.episode < args_parse.max_episodes :
@@ -331,14 +314,18 @@ class DQNLearningNode(Node):
                 print(f'\n episode {self.episode} of {args_parse.max_episodes}')
                 state = self.where_I_am(True)
                 state = torch.tensor(state, dtype=torch.float32, device=DEVICE).unsqueeze(0)
-                STEP_DONE = 0.0
+                LOSS = 100.0
+                queue = deque()
                 for t in count():
                     print(f'state: {state}')
-                    action, eps_threshold = select_action(state, STEP_DONE, self.policy_net)
-                    STEP_DONE += 1
-                    # print(f'eps_threshold: {eps_threshold}  , {type(eps_threshold)}')
-                    print(f'action-> LINEAR_SPEED: {sigmoid(float(action[0].item()))},  ANGULAR_SPEED: {float(action[1].item())}')
-                    observation, reward, terminated, truncated = self.step(action, state)
+                    action, action_status = select_action(state, self.ep_steps, self.policy_net)
+                    queue.append(catergory(float(action[0].item())))
+                    if len(queue) > 6:
+                        queue.popleft()
+
+                    print(f'queue: {queue}')
+                    self.ep_steps += 1
+                    observation, reward, terminated, truncated = self.step(action, list(queue))
                     self.CUMULATIVE_REWARD += reward
                     print(f' CUMULATIVE_REWARD: {self.CUMULATIVE_REWARD}')
                     reward = torch.tensor([reward], device=DEVICE)
@@ -349,21 +336,20 @@ class DQNLearningNode(Node):
                         next_state = None
                     else:
                         next_state = torch.tensor(observation, dtype=torch.float32, device=DEVICE).unsqueeze(0)
-                    
-                    # print(f'\n state: {state}, \
-                        #   \n action: {action}, \
-                        #   \n next_state: {next_state}, \
-                        #   \n reward: {reward}')
+          
+                    if action_status == 'get Best Action':
+                        action = torch.tensor([catergory(float(action[0].item())), ALPHA*sigmoid(float(action[1].item())), np.tanh(float(action[2].item()))*(np.pi/4.)], device=DEVICE).view(3)
                     self.memory.push(state, action, next_state, reward)    
                     state = next_state
 
                     # Perform one step of the optimization (on the policy network)
-                    optimize_model(policy_net = self.policy_net, 
+                    loss = optimize_model(policy_net = self.policy_net, 
                                    target_net = self.target_net, 
                                    optimizer = self.optimizer,
                                    memory = self.memory,
                                    criterion = self.loss_fnc)
-                    # print(f'optimize done')
+                    
+                    print(f'\n\t loss: {loss} |  LOSS: {LOSS}\t\n')
 
                     # Soft update of the target network's weights
                     # θ′ ← τ θ + (1 −τ )θ′
@@ -374,15 +360,26 @@ class DQNLearningNode(Node):
                     
                     self.target_net.load_state_dict(target_net_state_dict)
 
+                    if (loss != None) and (loss < LOSS) or (self.episode % args_parse.max_episodes_before_save == 0) :
+                        print('-'*100)
+                        torch.save(self.policy_net.state_dict(), args_parse.DQN_source_dir)
+                        print(f'saved!!!')
+                        LOSS = loss
+
                     if done:### done episode
                         print('-'*100)
                         print(f'\n done episode')
                         robotStop(self.velPub)
-                        print(f" End of episode. step: {STEP_DONE}")
+                        print(f" End of episode. step: {self.ep_steps}")
                         print(f' CUMULATIVE_REWARD: {self.CUMULATIVE_REWARD}')
-                        torch.save(self.policy_net.state_dict(), args_parse.DQN_source_dir)
-                        print(f'saved!!!')
+                        # torch.save(self.policy_net.state_dict(), args_parse.DQN_source_dir)
+                        # print(f'saved!!!')
                         break
+
+
+                # if self.episode % args_parse.max_episodes_before_save == 0 :
+                #         print(f'saved!!! @ episode: {self.episode}')
+                #         torch.save(self.policy_net.state_dict(), args_parse.DQN_source_dir)
             
             else:
 

@@ -8,7 +8,7 @@ import numpy as np
 from tf_transformations import euler_from_quaternion, quaternion_from_euler
 
 # Q-learning speed parameters
-CONST_LINEAR_SPEED_FORWARD = 0.5
+CONST_LINEAR_SPEED_FORWARD = 0.42
 CONST_ANGULAR_SPEED_FORWARD = 0.0
 
 CONST_LINEAR_SPEED_TURN = 0.05
@@ -51,8 +51,19 @@ def createVelMsg(v,w):
 
 #######################################################
 def robotUp2U(velPub, LINEAR_SPEED, ANGULAR_SPEED):   #
-    velMsg = createVelMsg(ALPHA*LINEAR_SPEED, ANGULAR_SPEED*(np.pi/4.))#
+    velMsg = createVelMsg(LINEAR_SPEED, ANGULAR_SPEED)#
     velPub.publish(velMsg)                            #
+
+
+# Go GO command
+def robotGG(velPub, LINEAR_SPEED, ANGULAR_SPEED):
+    velMsg = createVelMsg(LINEAR_SPEED, 0.0)#
+    velPub.publish(velMsg)
+
+# Full Turn command
+def robotFullTurn(velPub, LINEAR_SPEED, ANGULAR_SPEED):
+    velMsg = createVelMsg(0.0, ANGULAR_SPEED)#
+    velPub.publish(velMsg)
 #######################################################
 
 
@@ -125,17 +136,14 @@ def robotSetPos(setPosPub, x, y, theta = 0.0):
 
 
 # Perform an action
-def robotDoAction(velPub, action):
+def robotDoAction(velPub, action, LINEAR_SPEED, ANGULAR_SPEED):
     status = 'robotDoAction => OK'
     match action:
-        case 0: robotGoForward(velPub)
-        case 1: robotCW(velPub)
-        case 2: robotCCW(velPub)
-        case 3: robotStop(velPub)
-        case 4: robotGoSuperForward(velPub)
+        case 0: robotGG(velPub, LINEAR_SPEED, ANGULAR_SPEED)
+        case 1: robotFullTurn(velPub, LINEAR_SPEED, ANGULAR_SPEED)
         case _: 
             status = 'robotDoAction => INVALID ACTION'
-            robotGoForward(velPub)
+            robotUp2U(velPub, LINEAR_SPEED, ANGULAR_SPEED)
 
     return status
 
