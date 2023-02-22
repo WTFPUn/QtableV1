@@ -743,3 +743,208 @@ Simulation time: 0:7:35  h/m/s
 MAX EPISODES REACHED(10), LEARNING FINISHED
 Simulation time: 0:6:52  h/m/s 
 
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:7:13  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:7:18  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:8:6  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:8:36  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:7:27  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:6:50  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:6:15  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:5:53  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:8:18  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:7:21  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:8:58  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:7:15  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:5:53  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:8:41  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:6:4  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:6:48  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:8:55  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:8:17  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:7:39  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:10:56  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:8:17  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:8:23  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:7:46  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:7:29  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:7:9  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:6:48  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:6:1  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:10:42  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:6:18  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:5:54  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:8:38  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:7:22  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:9:42  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:7:3  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:6:49  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:7:20  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:9:58  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:10:12  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:10:20  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:4:40  h/m/s 
+
+--------------------------------------- 
+
+MAX EPISODES REACHED(10), LEARNING FINISHED
+Simulation time: 0:8:8  h/m/s 
+
