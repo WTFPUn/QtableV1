@@ -15,7 +15,7 @@ print(cwd)
 cwd = os.path.dirname(cwd)
 print(cwd)
 
-cwd= 'Qtable/QtableV1'
+# cwd= 'Qtable/QtableV1'
 
 # TODO: Change to proper PATH
 DATA_PATH = os.path.join(cwd, 'Data')
