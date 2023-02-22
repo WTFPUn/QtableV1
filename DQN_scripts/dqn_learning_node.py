@@ -53,13 +53,13 @@ GAMMA = 0.9
 CHECKPOINT_DIR = MODULES_PATH + '/Checkpoint'
 
 # Q table source file
-DQN_SOURCE_DIR = CHECKPOINT_DIR + '/DQN_beta_up2u.pth'
+DQN_SOURCE_DIR = CHECKPOINT_DIR + '/DQN_beta_new_state.pth'
 
 RADIUS_REDUCE_RATE = .5
 REWARD_THRESHOLD =  -200
 CUMULATIVE_REWARD = 0.0
 
-GOAL_POSITION = (0., 2., .0)
+GOAL_POSITION = (2., 1., .0)
 GOAL_RADIUS = .1
 
 # edit when chang order in def roboDoAction in Control.py  *****
@@ -103,19 +103,19 @@ args_parse = parser.parse_args()
 class DQNLearningNode(Node):
     def __init__(self):
         super().__init__('learning_node')
-        self.timer_period = .5 # seconds
+        self.timer_period = 1 # seconds
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
         self.reset = self.create_client(Empty, '/reset_simulation')
         self.setPosPub = self.create_publisher(ModelState, 'gazebo/set_model_state', 10)
         self.velPub = self.create_publisher(Twist, 'cmd_vel', 10)
         self.dummy_req = Empty_Request()
         self.reset.call_async(self.dummy_req)
-        self.actions = createActions(args_parse.n_actions_enable)
-        self.state_space = createStateSpace()
-        # self.policy_net = DQN(n_observations = len(self.state_space), n_actions = len(self.actions)).to(DEVICE)
-        # self.target_net = DQN(n_observations = len(self.state_space), n_actions = len(self.actions)).to(DEVICE)
-        self.policy_net = DQN().to(DEVICE)
-        self.target_net = DQN().to(DEVICE)
+        # self.actions = createActions(args_parse.n_actions_enable)
+        # self.state_space = createStateSpace()
+        self.policy_net = DQN(n_observations = 11).to(DEVICE)
+        self.target_net = DQN(n_observations = 11).to(DEVICE)
+        # self.policy_net = DQN().to(DEVICE)
+        # self.target_net = DQN().to(DEVICE)
 
         if args_parse.resume:
                 self.policy_net.load_state_dict(torch.load(args_parse.DQN_source_dir))
@@ -124,16 +124,16 @@ class DQNLearningNode(Node):
         self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=1e-4, amsgrad=True)
         self.loss_fnc = nn.SmoothL1Loss()
         self.memory = ReplayMemory(10000)
-        print(f'\n {"start learning_node with":^{MAX_WIDTH*4}}')
-        print('-'*100)
-        for arg in vars(args_parse):
-            print(f'{arg:<{MAX_WIDTH}}: {str(getattr(args_parse, arg)):<{MAX_WIDTH}}')
+        # print(f'\n {"start learning_node with":^{MAX_WIDTH*4}}')
+        # print('-'*100)
+        # for arg in vars(args_parse):
+            # print(f'{arg:<{MAX_WIDTH}}: {str(getattr(args_parse, arg)):<{MAX_WIDTH}}')
 
         print('-'*100)
-        print(f'\n n_state:  {len(self.state_space)}')
-        print(f'\n n_actions: {args_parse.n_actions_enable} --> {[ACTIONS_DESCRIPTION[i] for i in range(args_parse.n_actions_enable)]}')
+        # print(f'\n n_state:  {len(self.state_space)}')
+        # print(f'\n n_actions: {args_parse.n_actions_enable} --> {[ACTIONS_DESCRIPTION[i] for i in range(args_parse.n_actions_enable)]}')
         print(f'\n {"summary policy_net":^{MAX_WIDTH*2}}')
-        summary(self.policy_net, input_size = (len(self.state_space),))
+        summary(self.policy_net, input_size = (11,))
         
         print()
         # input("Press enter to continue...")
@@ -244,7 +244,7 @@ class DQNLearningNode(Node):
                 self.prev_lidar = lidar
                 self.prev_position = getPosition(odomMsg)
                 self.prev_action = 0
-                self.angle_state = 1
+                self.angle_state = torch.rand(1)
                 self.first_action_taken = True
 
         observation  = defineState( lidar = lidar, 
@@ -333,7 +333,7 @@ class DQNLearningNode(Node):
                 state = torch.tensor(state, dtype=torch.float32, device=DEVICE).unsqueeze(0)
                 STEP_DONE = 0.0
                 for t in count():
-                    # print(f'STEP_DONE: {STEP_DONE}')
+                    print(f'state: {state}')
                     action, eps_threshold = select_action(state, STEP_DONE, self.policy_net)
                     STEP_DONE += 1
                     # print(f'eps_threshold: {eps_threshold}  , {type(eps_threshold)}')

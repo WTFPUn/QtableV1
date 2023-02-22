@@ -13,7 +13,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
 BATCH_SIZE = 128
-GAMMA = 0.96
+GAMMA = 0.99
 EPS_START = 0.9
 EPS_END = 0.05
 EPS_DECAY = 1000
@@ -42,7 +42,7 @@ def sigmoid(x):
   
 def select_action(state, steps_done, policy_net):
     eps_threshold = EPS_END + (EPS_START - EPS_END) * math.exp(-1. * steps_done / EPS_DECAY)
-    if np.random.uniform() > eps_threshold:
+    if torch.rand(1) > eps_threshold:
         print(f'get Best Action')
         with torch.no_grad():
             # t.max(1) will return the largest column value of each row.

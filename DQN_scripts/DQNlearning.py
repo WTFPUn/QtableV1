@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 class DQN(nn.Module):
 
-    def __init__(self, n_observations=10, n_actions=2 ):
+    def __init__(self, n_observations, n_actions=2 ):
         super(DQN, self).__init__()
         self.Input = nn.Linear(n_observations, 128)
         self.layer1 = nn.Linear(128, 32)
@@ -17,4 +17,5 @@ class DQN(nn.Module):
         x = F.relu(self.Input(x))
         x = F.relu(self.layer1(x))
         x = F.relu(self.layer2(x))
-        return F.tanh(self.Output(x))
+        return F.tanh(self.Output(x)) # [-1, 1]
+    

@@ -139,10 +139,3 @@ def robotDoAction(velPub, action):
 
     return status
 
-# Stability Condition
-def check_stability(k_rho, k_alpha, k_beta):
-    return k_rho > 0 and k_beta < 0 and k_alpha > k_rho
-
-# Strong Stability Condition
-def check_strong_stability(k_rho, k_alpha, k_beta):
-    return k_rho > 0 and k_beta < 0 and k_alpha + 5 * k_beta / 3 - 2 * k_rho / np.pi > 0
