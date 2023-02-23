@@ -9,15 +9,23 @@ from std_msgs.msg import String
 import math
 from geometry_msgs.msg import Twist
 
+import argparse
+
+# Add args
+parser = argparse.ArgumentParser(description='control node')
+# Add goal position
+parser.add_argument('--gpos', default = (0.0, 0.0), nargs=2, type=float, help='Enter x.x y.y pos for goal position')
+
+args = parser.parse_args()
+
 import sys
 cwd = os.getcwd()
-print(cwd)
 cwd = os.path.dirname(cwd)
-print(cwd)
+print('PLEASE RUN ON QTABLE/SRCRIPTS FOLDER')
+print('PATH:', cwd)
 
-cwd= 'Qtable/QtableV1'
+# cwd= 'Qtable/QtableV1'
 
-# TODO: Change to proper PATH
 DATA_PATH = os.path.join(cwd, 'Data')
 MODULES_PATH = os.path.join(cwd, 'scrpits')
 sys.path.insert(0, MODULES_PATH)
@@ -54,8 +62,8 @@ if REAL_ROBOT:
     X_INIT = 0.0
     Y_INIT = 0.0
     THETA_INIT = 0.0
-    X_GOAL = 3
-    Y_GOAL = -2
+    X_GOAL = args.gpos[0]
+    Y_GOAL = args.gpos[1]
     THETA_GOAL = 90
 else:
     RANDOM_INIT_POS = False
@@ -70,15 +78,6 @@ else:
 
 # Log file directory - Q table source
 Q_TABLE_SOURCE = DATA_PATH + '/Log_learning'
-
-'''
-Add code
-'''
-# import pandas as pd
-
-# Get arguments from QTable
-# n_actions_enable = len(qt.columns)
-
 
 class ControlNode(Node):
     def __init__(self):
@@ -208,7 +207,7 @@ class ControlNode(Node):
 
                 # Check for objects nearby
                 crash = checkCrash(lidar)
-                object_nearby = checkObjectNearby(lidar)
+                object_nearby = checkObjectNearby(x3)
                 goal_near = checkGoalNear(x, y, X_GOAL, Y_GOAL)
                 enable_feedback_control = True
                 posIsSame = False
@@ -220,7 +219,8 @@ class ControlNode(Node):
                 # if crash. go backward
                 if crash:
                     # robotStop(self.velPub)
-                    robotGoBackward(self.velPub)
+                    velMsg = createVelMsg(-0.2,0.0)
+                    self.velPub.publish(velMsg)
                     if max(lidar_x1, lidar_x5) == lidar_x1:
                         robotCCW(self.velPub)
                     else :
@@ -269,6 +269,7 @@ class ControlNode(Node):
                 if status == 'Goal position reached!':
                     robotStop(self.velPub)
                     text = text + '\r\n\r\nGoal position reached! End of simulation!'
+                    
                     raise SystemExit
 
                 print(text)
