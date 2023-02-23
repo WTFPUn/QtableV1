@@ -134,26 +134,38 @@ def checkCrash(lidar):
     # W = np.linspace(1.56, 1, len(lidar_horizon) // 2)
     # W = np.append(W, np.linspace(1, 1.56, len(lidar_horizon) // 2))
     # if np.min( W * lidar_horizon ) < COLLISION_DISTANCE:
-    if np.min(lidar) < COLLISION_DISTANCE:
+
+    length_lidar = len(lidar) 
+    ratio = length_lidar / 360 
+    angle = 60
+
+    lidar_left = min(lidar[round(ratio*(0)): round(ratio*(angle+1))])
+    lidar_right = min(lidar[round(ratio*(360-angle)): round(ratio*(360))])
+    lidar_front = min(lidar_left, lidar_right)
+
+
+
+    if lidar_front <= 0.10:
         return True
     else:
         return False
 
 # Check - object nearby
-def checkObjectNearby(lidar):
+def checkObjectNearby(x3):
     # lidar_horizon = np.concatenate((lidar[(ANGLE_MIN + sum(HORIZON_WIDTH)):(ANGLE_MIN):-1],lidar[(ANGLE_MAX):(ANGLE_MAX - sum(HORIZON_WIDTH)):-1]))
     # W = np.linspace(1.56, 1, len(lidar_horizon) // 2)
     # W = np.append(W, np.linspace(1, 1.56, len(lidar_horizon) // 2))
     # if np.min( W * lidar_horizon ) < NEARBY_DISTANCE:
-    if np.min(lidar) < NEARBY_DISTANCE:
+    if x3 != 2:
         return True
     else:
         return False
 
 # Check - goal near
 def checkGoalNear(x, y, x_goal, y_goal):
+
     ro = sqrt( pow( ( x_goal - x ) , 2 ) + pow( ( y_goal - y ) , 2) )
-    if ro < 0.3:
+    if ro < 0.5: 
         return True
     else:
         return False
