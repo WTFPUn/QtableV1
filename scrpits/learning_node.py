@@ -10,8 +10,9 @@ from std_srvs.srv import Empty
 import pandas as pd
 from std_srvs.srv._empty import Empty_Request
 import sys
-DATA_PATH = '/mnt/c/Users/keera/Documents/Github/Basic_robot/QtableV1/Data'
-MODULES_PATH = '/mnt/c/Users/keera/Documents/Github/Basic_robot/QtableV1/scrpits'
+Main_PATH = 'Qtable/QtableV1'
+DATA_PATH = f'{Main_PATH}/Data'
+MODULES_PATH = f'{Main_PATH}/scrpits'
 
 sys.path.insert(0, MODULES_PATH)
 from gazebo_msgs.msg._model_state import ModelState
