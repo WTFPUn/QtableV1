@@ -137,7 +137,7 @@ def checkCrash(lidar):
 
     length_lidar = len(lidar) 
     ratio = length_lidar / 360 
-    angle = 60
+    angle = 90
 
     lidar_left = min(lidar[round(ratio*(0)): round(ratio*(angle+1))])
     lidar_right = min(lidar[round(ratio*(360-angle)): round(ratio*(360))])
@@ -145,7 +145,7 @@ def checkCrash(lidar):
 
 
 
-    if lidar_front <= 0.10:
+    if lidar_front <= 0.12:
         return True
     else:
         return False
