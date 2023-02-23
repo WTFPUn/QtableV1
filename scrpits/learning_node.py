@@ -79,8 +79,8 @@ GOAL_RADIUS = .1
 ACTIONS_DESCRIPTION = { 0 : 'Forward',
                         1 : 'CW',
                         2 : 'CCW',
-                        3 : 'Stop',
-                        4 : 'SuperForward'}
+                        # 3 : 'Stop',
+                        3 : 'SuperForward'}
 MAX_WIDTH = 25
 
 parser = argparse.ArgumentParser(description='Qtable V1 ~~Branch: welcomeToV2')
@@ -172,8 +172,8 @@ class LearningNode(Node):
         
         print()
         # input("Press enter to continue...")
-        self.log_sim_info = open(args_parse.log_file_dir +'/LogInfo.txt','w')
-        self.log_sim_params = open(args_parse.log_file_dir +'/LogParams.txt','w')
+        self.log_sim_info = open(args_parse.log_file_dir +'/LogInfo.txt','a')
+        self.log_sim_params = open(args_parse.log_file_dir +'/LogParams.txt','a')
         # Learning parameters
         self.T = T_INIT
         self.EPSILON = EPSILON_INIT
@@ -454,6 +454,8 @@ class LearningNode(Node):
                         robotStop(self.velPub)
                         self.ep_steps = self.ep_steps - 1
                         self.first_action_taken = False
+                        self.prev_action = 0
+
                         # init pos
                         (x_set_init, y_set_init) = getPosition(odomMsg)
                         
@@ -478,7 +480,7 @@ class LearningNode(Node):
                         # else:
                         #     self.robot_in_pos = False
                         
-                    # First acion
+                    # First action
                     elif not self.first_action_taken:
                         _, odomMsg = self.wait_for_message('/odom', Odometry)               #just added
                         ( current_x , current_y ) = getPosition(odomMsg)                    #just added
@@ -491,7 +493,7 @@ class LearningNode(Node):
                         if args_parse.exploration_func == 1 :
                             ( self.action, status_strat ) = softMaxSelection(self.Q_table, state_ind, self.actions, self.T)
                         else:
-                            ( self.action, status_strat ) = epsiloGreedyExploration(self.Q_table, state_ind, self.actions, self.EPSILON)
+                            ( self.action, status_strat ) = epsiloGreedyExploration(self.Q_table, state_ind, self.actions, self.EPSILON, self.prev_action)
 
                         status_rda = robotDoAction(self.velPub, self.action)
 
@@ -544,18 +546,41 @@ class LearningNode(Node):
 
                         # print("time: ", self.get_clock().now().nanoseconds)
                         ( self.Q_table, status_uqt ) = updateQTable(self.Q_table, self.prev_state_ind, self.action, reward, state_ind, self.alpha, self.gamma)
+                        
 
-                        if args_parse.exploration_func == 1:
-                            ( self.action, status_strat ) = softMaxSelection(self.Q_table, state_ind, self.actions, self.T)
+                        #RL
+                        # if args_parse.exploration_func == 1:
+                        #     ( self.action, status_strat ) = softMaxSelection(self.Q_table, state_ind, self.actions, self.T)
+                        # else:
+                        #     print()
+                        #     ( self.action, status_strat ) = epsiloGreedyExploration(self.Q_table, state_ind, self.actions, self.EPSILON, self.prev_action)
+
+                        # RL with MANY MODES
+                        if x2 != 0 or x3 != 2 or x4 != 3 or x5 != 3 or x6 != 2 or x7 != 0:
+                            # if x2 == 0 and x4 == 0 and x7 != 0:
+                            #     self.action == 1
+                            # elif x7 == 0 and x5 == 0 and x2 != 0:
+                            #     self.action == 2
+                            # else:
+                            if args_parse.exploration_func == 1:
+                                ( self.action, status_strat ) = softMaxSelection(self.Q_table, state_ind, self.actions, self.T)
+                            else:
+                                ( self.action, status_strat ) = epsiloGreedyExploration(self.Q_table, state_ind, self.actions, self.EPSILON, self.prev_action)
+
                         else:
-                            ( self.action, status_strat ) = epsiloGreedyExploration(self.Q_table, state_ind, self.actions, self.EPSILON)
+                            # GO WITH SUPER FORWARD IF THERE IS NOTHING IN FRONT OF ROBOT +- 9 DEGREE
+                            self.action = 3
+                        
+                        # print(self.action)
 
                         status_rda = robotDoAction(self.velPub, self.action)
+                        print(" Action: ", ACTIONS_DESCRIPTION[self.action])
+                        print(" Previous Action: ", ACTIONS_DESCRIPTION[self.prev_action])
 
                         if not status_uqt == 'updateQTable => OK':
                             print('\r\n', status_uqt, '\r\n')
                             self.log_sim_info.write('\r\n'+status_uqt+'\r\n')
-                        if not (status_strat == 'softMaxSelection => OK' or status_strat == 'epsiloGreedyExploration => OK'):
+                        if not (status_strat == 'softMaxSelection => OK' or status_strat == 'epsiloGreedyExploration => OK' or status_strat == 'getSecondBestAction => OK'):
                             print('\r\n', status_strat, '\r\n')
                             self.log_sim_info.write('\r\n'+status_strat+'\r\n')
                         if not status_rda == 'robotDoAction => OK':

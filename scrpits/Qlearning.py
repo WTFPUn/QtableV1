@@ -9,7 +9,7 @@ import time
 
 STATE_SPACE_IND_MAX = 27648 - 1
 STATE_SPACE_IND_MIN = 1 - 1
-ACTIONS_IND_MAX = 7
+ACTIONS_IND_MAX = 3
 ACTIONS_IND_MIN = 0
 
 ANGLE_MAX = 360 - 1
@@ -68,6 +68,23 @@ def getBestAction(Q_table, state_ind, actions):
 
     return ( a, status )
 
+# Select the second best action a in state
+def getSecondBestAction(Q_table, state_ind, actions):
+    if STATE_SPACE_IND_MIN <= state_ind <= STATE_SPACE_IND_MAX:
+        status = 'getSecondBestAction => OK'
+        A = Q_table[state_ind,:]
+        # print(A)
+        b = sorted(set(A))[-2]
+        a = actions[list(A).index(b)]
+
+        # print(b)
+        # print(a)
+    else:
+        status = 'getSecondBestAction => INVALID STATE INDEX'
+        a = getRandomAction(actions)
+
+    return ( a, status )
+
 # Select random action from actions
 def getRandomAction(actions):
     n_actions = len(actions)
@@ -75,10 +92,15 @@ def getRandomAction(actions):
     return actions[a_ind]
 
 # Epsilog Greedy Exploration action chose
-def epsiloGreedyExploration(Q_table, state_ind, actions, epsilon):
+def epsiloGreedyExploration(Q_table, state_ind, actions, epsilon, prev_action):
     if np.random.uniform() > epsilon and STATE_SPACE_IND_MIN <= state_ind <= STATE_SPACE_IND_MAX:
         status = 'epsiloGreedyExploration => OK'
         ( a, status_gba ) = getBestAction(Q_table, state_ind, actions)
+        # print(a)
+        if (prev_action == 1 and a == 2) or (prev_action == 2 and a == 1): 
+            (a,status) = getSecondBestAction(Q_table, state_ind, actions)
+            # print(a)
+
         if status_gba == 'getBestAction => INVALID STATE INDEX':
             status = 'epsiloGreedyExploration => INVALID STATE INDEX'
     else:
@@ -164,31 +186,42 @@ def getReward(  action,
     if crash:
         reward += -500
 
-    # facing wall panelty/rewards
+    # avoid facing wall panelty/rewards
     lidar_horizon = np.concatenate((lidar[(ANGLE_MIN + sum(HORIZON_WIDTH[:2])):(ANGLE_MIN):-1],lidar[(ANGLE_MAX):(ANGLE_MAX - sum(HORIZON_WIDTH[:2])):-1]))
     prev_lidar_horizon = np.concatenate((prev_lidar[(ANGLE_MIN + sum(HORIZON_WIDTH[:2])):(ANGLE_MIN):-1],prev_lidar[(ANGLE_MAX):(ANGLE_MAX - sum(HORIZON_WIDTH[:2])):-1]))
     W = np.linspace(1, 1.1, len(lidar_horizon) // 2)
     W = np.append(W, np.linspace(1.1, 1, len(lidar_horizon) // 2))
-    if np.sum( W * ( lidar_horizon - prev_lidar_horizon) ) >= 0:
-        reward += +1
-    else:
-        reward += -1
-
-
-    #too close to wall
-    lidar_horizon = np.concatenate((lidar[(ANGLE_MIN + sum(HORIZON_WIDTH[:1])):(ANGLE_MIN):-1],lidar[(ANGLE_MAX):(ANGLE_MAX - sum(HORIZON_WIDTH[:1])):-1]))
-    if min(lidar_horizon) < 0.15:
+    if np.sum( W * ( lidar_horizon - prev_lidar_horizon) ) < 0:
         reward += -5
-        if min(lidar_horizon) < 0.1:
-            reward += -10
+    # else:
+    #     reward += 5
+
+    #too close to wall panelty
+    alpha = 20 #penelty weight
+    beta = .25 #start panelty at this distant in meters    
+    gamma = 0.125 #collision distant
+    length_lidar = len(lidar)
+    ratio = length_lidar / 360 
+
+    if min(lidar_horizon) < beta: #lidar_horizon is define above
+
+        reward += -alpha* (np.exp(-(min(lidar_horizon)-gamma)) - np.exp(-(beta-gamma))) / (1 - np.exp(-(beta-gamma)))
+
+        lidar_x1 = min(lidar[round(ratio*(ANGLE_MIN + HORIZON_WIDTH[1] + HORIZON_WIDTH[2])): round(ratio*(ANGLE_MIN + HORIZON_WIDTH[1] + HORIZON_WIDTH[2] + HORIZON_WIDTH[3])) ])
+        lidar_x8 = min(lidar[round(ratio*(ANGLE_MAX - HORIZON_WIDTH[1] - HORIZON_WIDTH[2] - HORIZON_WIDTH[3])):round(ratio*(ANGLE_MAX - HORIZON_WIDTH[1] - HORIZON_WIDTH[2])) ])
+        #keep center
+        if lidar_x1 < gamma and lidar_x8 > gamma:
+            reward += -alpha* (np.exp(-(lidar_x1-gamma)) - np.exp(-(beta-gamma))) / (1 - np.exp(-(beta-gamma)))
+        if lidar_x8 < gamma and lidar_x1 > gamma:
+            reward += -alpha* (np.exp(-(lidar_x8-gamma)) - np.exp(-(beta-gamma))) / (1 - np.exp(-(beta-gamma)))
 
     # action and prev_action is same and action is left or right
-    if (prev_action == 3 and action == 4) or (prev_action == 4 and action == 3):
-            reward += -1
+    # if (prev_action == 1 and action == 2) or (prev_action == 2 and action == 1):
+    #         reward += -20
 
-    #repeat stop penelty
-    if prev_action == 2 and action == 2:
-            reward += -1
+    # repeat stop penelty
+    # if prev_action == 2 and action == 2:
+    #         reward += -1
 
     #reach goal
     if dist<goal_radius:
@@ -198,11 +231,11 @@ def getReward(  action,
     
     #away from goal panelty
     if angle_state == 0:
-        reward += -1
+        reward += -2
 
     #facing goal reward
     elif angle_state == 1:
-        reward += 5
+        reward += 4
 
     elif angle_state == 2:
         reward += 1

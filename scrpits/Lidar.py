@@ -6,11 +6,11 @@ from std_msgs.msg import String
 from sensor_msgs.msg import LaserScan
 
 MAX_LIDAR_DISTANCE = .8
-COLLISION_DISTANCE = 0.08 # LaserScan.range_min = 0.1199999
+COLLISION_DISTANCE = 0.125 # LaserScan.range_min = 0.1199999
 NEARBY_DISTANCE = 0.45
 
-ZONE_0_LENGTH = .25
-ZONE_1_LENGTH = .5
+ZONE_0_LENGTH = .2
+ZONE_1_LENGTH = .4
 
 ANGLE_MAX = 360  #360  degree
 ANGLE_MIN = 1 - 1   #0 degree
@@ -45,12 +45,12 @@ def lidarScan(msgScan):
 def scanDiscretization(state_space, lidar, target_pos, robot_pose, robot_prev_pose, max_dist, goal_radius):
     ### now --> 2304*3*4 stage
     x1 = 1  # no obstacle
-    x2 = 0
+    x2 = 1
     x3 = 2
     x4 = 3
     x5 = 3
     x6 = 2 
-    x7 = 2
+    x7 = 1
     x8 = 1
     
     x9 = 2
@@ -65,16 +65,16 @@ def scanDiscretization(state_space, lidar, target_pos, robot_pose, robot_prev_po
     # lidar_x1 = min(lidar[81: 90])
     lidar_x1 = min(lidar[round(ratio*(ANGLE_MIN + HORIZON_WIDTH[1] + HORIZON_WIDTH[2])): round(ratio*(ANGLE_MIN + HORIZON_WIDTH[1] + HORIZON_WIDTH[2] + HORIZON_WIDTH[3])) ])
     if ZONE_0_LENGTH <= lidar_x1 <= ZONE_1_LENGTH:
-        x1 = 1
-    else: 
         x1 = 0
+    else: 
+        x1 = 1
 
     # lidar_x8 = min(lidar[270: 279])
     lidar_x8 = min(lidar[round(ratio*(ANGLE_MAX - HORIZON_WIDTH[1] - HORIZON_WIDTH[2] - HORIZON_WIDTH[3])):round(ratio*(ANGLE_MAX - HORIZON_WIDTH[1] - HORIZON_WIDTH[2])) ])
     if ZONE_0_LENGTH <= lidar_x8 <= ZONE_1_LENGTH:
-        x1 = 1
+        x8 = 0
     else: 
-        x1 = 0
+        x8 = 1
 
     ###############################################################################
     ##HORIZON_WIDTH[2] --> 65 degree(25 to 90) :x2, x7

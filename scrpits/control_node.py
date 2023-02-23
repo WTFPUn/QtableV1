@@ -142,7 +142,7 @@ class ControlNode(Node):
         _, odomMsg = self.wait_for_message('/odom', Odometry)
         step_time = (self.get_clock().now() - self.t_step).nanoseconds / 1e9
 
-        self.prev_position = (999, 999)
+        self.prev_position = (0, 0)
 
         if step_time > MIN_TIME_BETWEEN_ACTIONS:
             self.t_step = self.get_clock().now()

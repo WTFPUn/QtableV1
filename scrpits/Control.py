@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import math
 from time import time
 from std_msgs.msg import String
 from geometry_msgs.msg import Twist
@@ -15,8 +15,8 @@ CONST_ANGULAR_SPEED_FORWARD = 0.0
 
 CONST_LINEAR_SPEED_TURN = 0.05
 
-CONST_ANGULAR_SPEED_TURN = 0.5
-CONST_ANGULAR_SPEED_CW = 0.69
+CONST_ANGULAR_SPEED_TURN = (math.pi/16)
+# CONST_ANGULAR_SPEED_CW = 0.69
 
 # Feedback control parameters
 K_RO = 2
@@ -176,21 +176,28 @@ def robotDoAction(velPub, action):
     # elif action == 2:
     #     robotTurnRight(velPub)
 ########################################
-    elif action == 4:
-        robotGoSuperForward(velPub)
-    # elif action == 4:
-    #     robotGoBackward(velPub) 
-    elif action == 3:
-        robotStop(velPub)   
     elif action == 1:
         robotCW(velPub)
     elif action == 2:
-        robotCCW(velPub)       
+        robotCCW(velPub)  
+    # elif action == 3:
+    #     robotStop(velPub)  
+    elif action == 3:
+        robotGoSuperForward(velPub)
+    # elif action == 4:
+    #     robotGoBackward(velPub) 
     else:
         status = 'robotDoAction => INVALID ACTION'
         robotGoForward(velPub)
 
     return status
+
+# def gogogoControl(lidar):
+#     #GO WITH SUPER FORWARD IF THERE IS NOTHING IN FRONT OF ROBOT +- 9 DEGREE 
+#     if .8 < min(lidar[round(ratio*(ANGLE_MIN + HORIZON_WIDTH[1] + HORIZON_WIDTH[2])): round(ratio*(ANGLE_MIN + HORIZON_WIDTH[1] + HORIZON_WIDTH[2] + HORIZON_WIDTH[3])) ])
+#     and .8 = min(lidar[round(ratio*(ANGLE_MAX - HORIZON_WIDTH[1] - HORIZON_WIDTH[2] - HORIZON_WIDTH[3])):round(ratio*(ANGLE_MAX - HORIZON_WIDTH[1] - HORIZON_WIDTH[2])) ]):
+        
+#         return robotGoSuperForward(velPub)
 
 # Feedback Control Algorithm
 def robotFeedbackControl(velPub, x, y, theta, x_goal, y_goal, theta_goal):
@@ -223,6 +230,8 @@ def robotFeedbackControl(velPub, x, y, theta, x_goal, y_goal, theta_goal):
     velPub.publish(velMsg)
 
     return status
+
+
 
 # Stability Condition
 def check_stability(k_rho, k_alpha, k_beta):
