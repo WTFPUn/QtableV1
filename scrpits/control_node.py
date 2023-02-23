@@ -82,6 +82,14 @@ else:
 # Log file directory - Q table source
 Q_TABLE_SOURCE = DATA_PATH + '/Log_learning'
 
+class Ward():
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.radius = 0.5
+    def isInside(self, x, y):
+        return math.sqrt((x-self.x)**2 + (y-self.y)**2) < self.radius
+
 class ControlNode(Node):
     def __init__(self):
         print('init...')
@@ -104,6 +112,8 @@ class ControlNode(Node):
         self.queuePos = []
         self.tempAction = 0
         self.tempCond = 0
+        self.wards = []
+        self.inTask = False
 
     def wait_for_message(
         node,
@@ -239,9 +249,19 @@ class ControlNode(Node):
                 if len(self.queuePos) == 5:
                     posIsSame = all(cond == self.queuePos[0] for cond in self.queuePos)
                     self.queuePos.pop(0)
-                
+
+                allLidarHaveObs = all([x1 <= 1, x2 <= 1, x3 < 1, x4 < 1, x5 < 1])
+
+                IsInWard = [self.wards[i].isInside(x, y) for i in range(len(self.wards))]
+                # Find the nearest ward
+                nearestWard = 0
+                for i in range(len(self.wards)):
+                    if IsInWard[i]:
+                        nearestWard = i
+                        break
+
                 # if crash. go backward
-                if crash or self.tempCond == 1:
+                if (crash or self.tempCond == 1) and not (self.inTask ) :
                     # robotStop(self.velPub)
                     if lidar_back >= 0.15 and crash:
                         velMsg = createVelMsg(-0.15,0.0)
@@ -258,33 +278,77 @@ class ControlNode(Node):
                         self.tempCond = 0
                         
                     status = 'Crash! backward'
-                
+                # check if robot is in ward then avoid it
+                elif any(IsInWard) and not (self.inTask):
+                    if lidar_x1 >= lidar_x5:
+                        velMsg = createVelMsg(0.0, -math.pi)
+                        self.velPub.publish(velMsg)
+                    else:
+                        velMsg = createVelMsg(0.0, math.pi)
+                        self.velPub.publish(velMsg)
+                    text = text + ' ==> Avoid ward'
+                    status = 'Avoid ward'
                 # U turn algorithm
                 # if last n position is the same coordinate.
-                elif posIsSame or self.tempCond == 2:
-                    
-                    if self.tempCond == 2:
-                        velMsg = createVelMsg(0.0, -math.pi)
-                        self.velPub.publish(velMsg)
-                        text = text + ' ==> U turn algorithm'
-                        self.tempCond = 0
-                    else:
-                        velMsg = createVelMsg(0.0, -math.pi)
-                        self.velPub.publish(velMsg)
+                elif (posIsSame or self.tempCond == 2)  or (allLidarHaveObs) or (self.inTask) or (self.tempCond == 4):
+                    if not self.inTask :
+                        if self.tempCond == 2:
+                            velMsg = createVelMsg(0.0, -math.pi)
+                            self.velPub.publish(velMsg)
+                            text = text + ' ==> U turn algorithm'
+                            self.tempCond = 0
+                        else:
+                            velMsg = createVelMsg(0.0, -math.pi)    
+                            self.velPub.publish(velMsg)
+                
+                    else :
+                        if self.tempCond == 4:
+                            robotGoSuperForward(self.velPub)
+                            self.tempCond = 0
+                            self.inTask = False
+                        elif x1 > 1 or x5 > 1:
+                            if lidar_x1 >= lidar_x5:
+                                velMsg = createVelMsg(0.0, -math.pi)
+                                self.velPub.publish(velMsg)
+                                self.wards.append(Ward(x, y))
+                                print("Ward added at: ", x, y)
+                                self.inTask = True
+                            else:
+                                velMsg = createVelMsg(0.0, math.pi)
+                                self.velPub.publish(velMsg)
+                                self.wards.append(Ward(x, y))
+                                print("Ward added at: ", x, y)
+                                self.inTask = True
+                        else:
+                            robotGoForward(self.velPub)
+                            self.inTask = True
+                            
                     posIsSame = False
                 
                 # opportunity algorithm  if robot not in goal zone(2m) do this
-                elif ( np.min(lidar) > WANGWANG) and np.norm((x,y) - (X_GOAL, Y_GOAL)) > 2:
+                elif (( np.min(lidar) > WANGWANG) and np.linalg.norm(np.array([x,y]) - np.array([X_GOAL, Y_GOAL])) > 2 ) or self.tempCond == 3:
                         max = np.argmax([lidar_x1, lidar_x2, lidar_x3, lidar_x4, lidar_x5])
                         Angle = [-math.pi, -math.pi/4, "F", math.pi/4, math.pi]
-                        if max == 2:
+                        if self.tempCond == 3:
                             velMsg = createVelMsg(0.15,0.0)
                             self.velPub.publish(velMsg)
-                            text = text + ' ==> Opportunity algorithm'
+                            text = text + ' ==> Opportunity algorithm(forward)'
+                            self.tempCond = 0
+
+                        elif max == 2:
+                            velMsg = createVelMsg(0.15,0.0)
+                            self.velPub.publish(velMsg)
+                            text = text + ' ==> Opportunity algorithm(rotate)'
+                            self.tempCond = 3
                         else:
                             velMsg = createVelMsg(0.0, Angle[max])
                             self.velPub.publish(velMsg)
-                            text = text + ' ==> Opportunity algorithm'
+                            text = text + ' ==> Opportunity algorithm(rotate)'
+                            self.tempCond = 3
+                        
+
+                        
+                        
                     
                 # Feedback control algorithm
                 elif ( not object_nearby and goal_near ) or ( np.min(lidar) > WANGWANG):
