@@ -212,7 +212,22 @@ class ControlNode(Node):
                 # get lidar value from x1 and x5 Zone
                 lidar_x1 = min(lidar[round(ratio*(90- self.Angle_det/2)): round(ratio*(90+ self.Angle_det/2+1))])
                 lidar_x5 = min(lidar[round(ratio*(270- self.Angle_det/2)): round(ratio*(270+ self.Angle_det/2+1))])
+                
+                # Zone 2: 12: 36+1
+                lidar_x2 = min(lidar[round(ratio*(self.Angle_det/2 )): round(ratio*(self.Angle_det/2+ self.Angle_det+1))])
 
+                # Zone 3-1: 0: 12+1
+                lidar_x3_1 = min(lidar[round(ratio*(0)): round(ratio*(self.Angle_det/2+1))])
+                # Zone 3-2: 348: 360
+                lidar_x3_2 = min(lidar[round(ratio*( 360-self.Angle_det/2 )): round(ratio*(360))])
+                # Zone 3 result
+                lidar_x3 = min(lidar_x3_1, lidar_x3_2)
+
+                # Zone 4: 324:348+1
+                lidar_x4 = min(lidar[round(ratio*( 360-self.Angle_det/2-self.Angle_det )): round(ratio*(360-self.Angle_det/2 +1))])
+
+
+                            
                 # Check for objects nearby
                 crash, lidar_back = checkCrash(lidar)
                 object_nearby = checkObjectNearby(x3)
@@ -241,17 +256,7 @@ class ControlNode(Node):
                             velMsg = createVelMsg(0.0, math.pi/2)
                             self.velPub.publish(velMsg)
                         self.tempCond = 0
-
-                    # if lidar_back >= 0.15:
-                    #     velMsg = createVelMsg(-0.15,0.0)
-                    #     self.velPub.publish(velMsg)
-                    #     text = text + ' ==> Crash!  backward'
-                    # else:
-                    #     text = text + ' ==> Crash!  cannot backward' 
-                    # if max(lidar_x1, lidar_x5) == lidar_x1:
-                    #         robotCCW(self.velPub)
-                    # else :
-                    #         robotCW(self.velPub)
+                        
                     status = 'Crash! backward'
                 
                 # U turn algorithm
@@ -267,7 +272,20 @@ class ControlNode(Node):
                         velMsg = createVelMsg(0.0, -math.pi)
                         self.velPub.publish(velMsg)
                     posIsSame = False
-
+                
+                # opportunity algorithm  if robot not in goal zone(2m) do this
+                elif ( np.min(lidar) > WANGWANG) and np.norm((x,y) - (X_GOAL, Y_GOAL)) > 2:
+                        max = np.argmax([lidar_x1, lidar_x2, lidar_x3, lidar_x4, lidar_x5])
+                        Angle = [-math.pi, -math.pi/4, "F", math.pi/4, math.pi]
+                        if max == 2:
+                            velMsg = createVelMsg(0.15,0.0)
+                            self.velPub.publish(velMsg)
+                            text = text + ' ==> Opportunity algorithm'
+                        else:
+                            velMsg = createVelMsg(0.0, Angle[max])
+                            self.velPub.publish(velMsg)
+                            text = text + ' ==> Opportunity algorithm'
+                    
                 # Feedback control algorithm
                 elif ( not object_nearby and goal_near ) or ( np.min(lidar) > WANGWANG):
                     status = robotFeedbackControl(self.velPub, x, y, theta, X_GOAL, Y_GOAL, radians(THETA_GOAL))

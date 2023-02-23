@@ -5,7 +5,7 @@ from math import *
 from std_msgs.msg import String
 from sensor_msgs.msg import LaserScan
 
-MAX_LIDAR_DISTANCE = 2.0
+MAX_LIDAR_DISTANCE = 20.0
 COLLISION_DISTANCE = 0.125 # LaserScan.range_min = 0.1199999
 NEARBY_DISTANCE = 0.45
 
@@ -148,7 +148,7 @@ def checkCrash(lidar):
     lidar_back = min(lidar_back_left, lidar_back_right)
 
 
-    if lidar_front <= 0.12:
+    if lidar_front <= 0.11:
         return True, lidar_back
     else:
         return False, lidar_back
