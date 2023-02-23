@@ -204,6 +204,9 @@ class ControlNode(Node):
                 # Get lidar scan
                 ( lidar, angles ) = lidarScan(msgScan)
                 # ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, lidar)
+
+                print(lidar)
+                print(len(lidar))
             
                 length_lidar = len(lidar) 
                 ratio = length_lidar / 360 
