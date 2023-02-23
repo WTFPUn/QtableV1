@@ -165,10 +165,14 @@ class ControlNode(Node):
                     print('y = %.2f [m]' % y)
                     print('theta = %.2f [degrees]' % theta)
                     print('')
+<<<<<<< HEAD
                     print('\r\nGoal position:')
                     print('x = %.2f [m]' % X_GOAL)
                     print('y = %.2f [m]' % Y_GOAL)
                     input('Press Enter to start nong...')
+=======
+                    input('Enter to start...')
+>>>>>>> 6aac50b803f03b7e34123c2ab8f0dcaf9818df7c
                 else:
                     if RANDOM_INIT_POS:
                         ( x_init , y_init , theta_init ) = robotSetRandomPos(self.setPosPub)
