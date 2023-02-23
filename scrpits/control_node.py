@@ -46,6 +46,9 @@ REAL_ROBOT = True
 # Action parameter
 MIN_TIME_BETWEEN_ACTIONS = 0.0
 
+# wangwang
+WANGWANG = .3
+
 # Initial and goal positions
 INIT_POSITIONS_X = [ 0] 
 INIT_POSITIONS_Y = [ 0]
@@ -232,10 +235,10 @@ class ControlNode(Node):
                         self.tempCond = 1
                     elif self.tempCond == 1 or crash :
                         if lidar_x1 >= lidar_x5:
-                            velMsg = createVelMsg(0.0, -math.pi)
+                            velMsg = createVelMsg(0.0, -math.pi/2)
                             self.velPub.publish(velMsg)
                         else:
-                            velMsg = createVelMsg(0.0, math.pi)
+                            velMsg = createVelMsg(0.0, math.pi/2)
                             self.velPub.publish(velMsg)
                         self.tempCond = 0
 
@@ -254,14 +257,19 @@ class ControlNode(Node):
                 # U turn algorithm
                 # if last n position is the same coordinate.
                 elif posIsSame or self.tempCond == 2:
-                    velMsg = createVelMsg(0.0, -math.pi)
                     
-                    self.velPub.publish(velMsg)
-                    text = text + ' ==> U turn algorithm'
+                    if self.tempCond == 2:
+                        velMsg = createVelMsg(0.0, -math.pi)
+                        self.velPub.publish(velMsg)
+                        text = text + ' ==> U turn algorithm'
+                        self.tempCond = 0
+                    else:
+                        velMsg = createVelMsg(0.0, -math.pi)
+                        self.velPub.publish(velMsg)
                     posIsSame = False
 
                 # Feedback control algorithm
-                elif enable_feedback_control and ( not object_nearby and goal_near ):
+                elif ( not object_nearby and goal_near ) or ( np.min(lidar) > WANGWANG):
                     status = robotFeedbackControl(self.velPub, x, y, theta, X_GOAL, Y_GOAL, radians(THETA_GOAL))
                     text = text + ' ==> Feedback control algorithm '
                     if goal_near:

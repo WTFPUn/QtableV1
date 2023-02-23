@@ -144,7 +144,7 @@ def checkCrash(lidar):
     lidar_front = min(lidar_front_left, lidar_front_right)
 
     lidar_back_left = min(lidar[round(ratio*(180-angle)): round(ratio*(180+1))])
-    lidar_back_right = min(lidar[round(ratio*(180)), round(ratio*(180+angle+1))])
+    lidar_back_right = min(lidar[round(ratio*(180)) : round(ratio*(180+angle+1))])
     lidar_back = min(lidar_back_left, lidar_back_right)
 
 

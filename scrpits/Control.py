@@ -10,6 +10,7 @@ import math
 import numpy as np
 from tf_transformations import euler_from_quaternion, quaternion_from_euler
 
+
 # Q-learning speed parameters
 CONST_LINEAR_SPEED_FORWARD = 0.1
 CONST_ANGULAR_SPEED_FORWARD = 0.0
@@ -27,6 +28,7 @@ V_CONST = 0.1 # [m/s]
 # Goal reaching threshold
 GOAL_DIST_THRESHOLD = 0.15 # [m]
 GOAL_ANGLE_THRESHOLD = 15 # [degrees]
+GAMMA = 5
 
 # Get theta in [radians]
 def getRotation(odomMsg):
@@ -91,12 +93,14 @@ def robotStop(velPub):
     velPub.publish(velMsg)
 # CW command
 def robotCW(velPub):
-    velMsg = createVelMsg(0.0, -CONST_ANGULAR_SPEED_TURN)
+    AST = CONST_ANGULAR_SPEED_TURN + ((GAMMA*(np.random.randn() * 2 - 1))*math.pi/180)
+    velMsg = createVelMsg(0.0, -AST)
     velPub.publish(velMsg)
 
 # CCW command
 def robotCCW(velPub):
-    velMsg = createVelMsg(0.0, CONST_ANGULAR_SPEED_TURN)
+    AST = CONST_ANGULAR_SPEED_TURN + ((GAMMA*(np.random.randn() * 2 - 1))*math.pi/180)
+    velMsg = createVelMsg(0.0, AST)
     velPub.publish(velMsg)    
 # Set robot position and orientation
 def robotSetPos(setPosPub, x, y, theta):
