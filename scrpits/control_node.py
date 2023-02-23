@@ -99,7 +99,8 @@ class ControlNode(Node):
         self.count = 0
         self.Angle_det = 24
         self.queuePos = []
-    
+        self.tempAction = 0
+        self.tempCond = 0
 
     def wait_for_message(
         node,
@@ -164,6 +165,10 @@ class ControlNode(Node):
                     print('y = %.2f [m]' % y)
                     print('theta = %.2f [degrees]' % theta)
                     print('')
+                    print('\r\nGoal position:')
+                    print('x = %.2f [m]' % X_GOAL)
+                    print('y = %.2f [m]' % Y_GOAL)
+                    input('Press Enter to start nong...')
                 else:
                     if RANDOM_INIT_POS:
                         ( x_init , y_init , theta_init ) = robotSetRandomPos(self.setPosPub)
@@ -187,7 +192,7 @@ class ControlNode(Node):
             else:
                 self.count = self.count + 1
                 text = '\r\nStep %d , Step time %.2f s' % (self.count, step_time)
-
+                
                 # Get robot position and orientation
                 ( x , y ) = getPosition(odomMsg)
                 theta = getRotation(odomMsg)
@@ -206,7 +211,7 @@ class ControlNode(Node):
                 lidar_x5 = min(lidar[round(ratio*(270- self.Angle_det/2)): round(ratio*(270+ self.Angle_det/2+1))])
 
                 # Check for objects nearby
-                crash = checkCrash(lidar)
+                crash, lidar_back = checkCrash(lidar)
                 object_nearby = checkObjectNearby(x3)
                 goal_near = checkGoalNear(x, y, X_GOAL, Y_GOAL)
                 enable_feedback_control = True
@@ -216,22 +221,41 @@ class ControlNode(Node):
                 if len(self.queuePos) == 5:
                     posIsSame = all(cond == self.queuePos[0] for cond in self.queuePos)
                     self.queuePos.pop(0)
+                
                 # if crash. go backward
-                if crash:
+                if crash or self.tempCond == 1:
                     # robotStop(self.velPub)
-                    velMsg = createVelMsg(-0.2,0.0)
-                    self.velPub.publish(velMsg)
-                    if max(lidar_x1, lidar_x5) == lidar_x1:
-                        robotCCW(self.velPub)
-                    else :
-                        robotCW(self.velPub)
-                    text = text + ' ==> Crash! backward'
+                    if lidar_back >= 0.15 and crash:
+                        velMsg = createVelMsg(-0.15,0.0)
+                        self.velPub.publish(velMsg)
+                        text = text + ' ==> Crash!  backward'
+                        self.tempCond = 1
+                    elif self.tempCond == 1 or crash :
+                        if lidar_x1 >= lidar_x5:
+                            velMsg = createVelMsg(0.0, -math.pi)
+                            self.velPub.publish(velMsg)
+                        else:
+                            velMsg = createVelMsg(0.0, math.pi)
+                            self.velPub.publish(velMsg)
+                        self.tempCond = 0
+
+                    # if lidar_back >= 0.15:
+                    #     velMsg = createVelMsg(-0.15,0.0)
+                    #     self.velPub.publish(velMsg)
+                    #     text = text + ' ==> Crash!  backward'
+                    # else:
+                    #     text = text + ' ==> Crash!  cannot backward' 
+                    # if max(lidar_x1, lidar_x5) == lidar_x1:
+                    #         robotCCW(self.velPub)
+                    # else :
+                    #         robotCW(self.velPub)
                     status = 'Crash! backward'
                 
                 # U turn algorithm
                 # if last n position is the same coordinate.
-                if posIsSame:
-                    velMsg = createVelMsg(0.0, -2*math.pi)
+                elif posIsSame or self.tempCond == 2:
+                    velMsg = createVelMsg(0.0, -math.pi)
+                    
                     self.velPub.publish(velMsg)
                     text = text + ' ==> U turn algorithm'
                     posIsSame = False

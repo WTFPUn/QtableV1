@@ -5,7 +5,7 @@ from math import *
 from std_msgs.msg import String
 from sensor_msgs.msg import LaserScan
 
-MAX_LIDAR_DISTANCE = .8
+MAX_LIDAR_DISTANCE = 2.0
 COLLISION_DISTANCE = 0.125 # LaserScan.range_min = 0.1199999
 NEARBY_DISTANCE = 0.45
 
@@ -139,16 +139,19 @@ def checkCrash(lidar):
     ratio = length_lidar / 360 
     angle = 60
 
-    lidar_left = min(lidar[round(ratio*(0)): round(ratio*(angle+1))])
-    lidar_right = min(lidar[round(ratio*(360-angle)): round(ratio*(360))])
-    lidar_front = min(lidar_left, lidar_right)
+    lidar_front_left = min(lidar[round(ratio*(0)): round(ratio*(angle+1))])
+    lidar_front_right = min(lidar[round(ratio*(360-angle)): round(ratio*(360))])
+    lidar_front = min(lidar_front_left, lidar_front_right)
+
+    lidar_back_left = min(lidar[round(ratio*(180-angle)): round(ratio*(180+1))])
+    lidar_back_right = min(lidar[round(ratio*(180)), round(ratio*(180+angle+1))])
+    lidar_back = min(lidar_back_left, lidar_back_right)
 
 
-
-    if lidar_front <= 0.10:
-        return True
+    if lidar_front <= 0.12:
+        return True, lidar_back
     else:
-        return False
+        return False, lidar_back
 
 # Check - object nearby
 def checkObjectNearby(x3):
