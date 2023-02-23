@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
+from torch.distributions.normal import Normal
 from collections import deque
 
 # create a deque object to represent the queue
@@ -18,11 +19,11 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
 ALPHA = 0.8
-BATCH_SIZE = 8
+BATCH_SIZE = 2
 GAMMA = 0.99
 EPS_START = 0.9
 EPS_END = 0.05
-EPS_DECAY = 1000
+EPS_DECAY = 100
 TAU = 0.005
 LR = 1e-4
 
@@ -38,7 +39,12 @@ class ReplayMemory(object):
         self.memory.append(Transition(*args))
 
     def sample(self, batch_size):
-        return random.sample(self.memory, batch_size)
+        """Sample a batch of transitions"""
+        if batch_size > len(self.memory):
+            raise ValueError("batch_size must be less than or equal to the memory size")
+        indices = torch.randint(low=0, high=len(self.memory), size=(batch_size,), dtype=torch.long)
+        batch = [self.memory[i] for i in indices]
+        return batch
 
     def __len__(self):
         return len(self.memory)
@@ -48,11 +54,6 @@ def sigmoid(x):
 
 def catergory(x):
     return int(1) if sigmoid(x) > 0.5 else int(0)
-
-def add_to_queue(value):
-    queue.append(value)
-    if len(queue) > 10:
-        queue.popleft()
 
 def apply_func(tensor):
     tensor[:, 0].detach().apply_(catergory)

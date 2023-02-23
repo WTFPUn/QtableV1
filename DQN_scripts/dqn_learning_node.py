@@ -58,7 +58,7 @@ RADIUS_REDUCE_RATE = .5
 REWARD_THRESHOLD =  -200
 CUMULATIVE_REWARD = 0.0
 
-GOAL_POSITION = (2., 1., .0)
+GOAL_POSITION = (3., -2., .0)
 GOAL_RADIUS = .1
 
 MAX_WIDTH = 25
@@ -93,17 +93,12 @@ args_parse = parser.parse_args()
 
 from collections import deque
 
-# function to add a value to the queue and remove the oldest value if the queue size is greater than 10
-def add_to_queue(value):
-    queue.append(value)
-    if len(queue) > 4:
-        queue.popleft()
 ########################################################################################################
 
 class DQNLearningNode(Node):
     def __init__(self):
         super().__init__('learning_node')
-        self.timer_period = 0.5 # seconds
+        self.timer_period = 1. # seconds
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
         self.reset = self.create_client(Empty, '/reset_simulation')
         self.setPosPub = self.create_publisher(ModelState, 'gazebo/set_model_state', 10)
@@ -111,8 +106,8 @@ class DQNLearningNode(Node):
         self.dummy_req = Empty_Request()
         self.reset.call_async(self.dummy_req)
 
-        self.policy_net = DQN(n_observations = 11).to(DEVICE)
-        self.target_net = DQN(n_observations = 11).to(DEVICE)
+        self.policy_net = DQN(n_observations = 12).to(DEVICE)
+        self.target_net = DQN(n_observations = 12).to(DEVICE)
 
         if args_parse.resume:
                 self.policy_net.load_state_dict(torch.load(args_parse.DQN_source_dir))
@@ -124,7 +119,7 @@ class DQNLearningNode(Node):
 
         print('-'*100)
         print(f'\n {"summary policy_net":^{MAX_WIDTH*2}}')
-        summary(self.policy_net, input_size = (11,))
+        summary(self.policy_net, input_size = (12,))
         
         print()
         
@@ -136,6 +131,7 @@ class DQNLearningNode(Node):
         # initial position
         self.robot_in_pos = False
         self.first_action_taken = False
+        self.LOSS = 100.0
 
         # init time
         self.t_0 = self.get_clock().now()
@@ -246,7 +242,7 @@ class DQNLearningNode(Node):
         
         return observation
 
-    def step(self, action, queue):
+    def step(self, action, queue, angle_max_dist_state):
         """
         agent get action to interact with environment simulation
         """
@@ -255,6 +251,7 @@ class DQNLearningNode(Node):
         else:    
             action_mode = catergory(float(action[0].item()))
 
+        # action_mode = catergory(float(action[0].item()))
         print(f'action-> Action mode: {action_mode} LINEAR_SPEED: {ALPHA*sigmoid(float(action[1].item()))},  ANGULAR_SPEED: {float(action[2].item())*(np.pi/4.)}')
         status_rda =  robotDoAction(velPub=self.velPub, 
                                     action=action_mode, 
@@ -266,11 +263,12 @@ class DQNLearningNode(Node):
         _, odomMsg = self.wait_for_message('/odom', Odometry) 
         ( current_x , current_y ) = getPosition(odomMsg)
         ( lidar,_ ) = lidarScan(msgScan) 
-        if checkObjectNearby(lidar):
+        if checkObjectNearby(lidar) or checkCrash(lidar):
             robotStop(self.velPub)
-            robotGoBackward(self.velPub)
-            sleep(0.5)
-            robotStop(self.velPub)
+            # robotGoBackward(self.velPub)
+            sleep(0.3)
+            robotFullTurn(self.velPub, 0.0, float(angle_max_dist_state.numpy()))
+
         self.crash = checkCrash(lidar)
         
         ( reward, terminated) = getReward(  crash = self.crash,
@@ -288,7 +286,8 @@ class DQNLearningNode(Node):
             truncated = True
         else:
             truncated = False 
-
+        
+        # robotFullTurn(self.velPub, 0.0, float(angle_max_dist_state.numpy()))
         observation = self.where_I_am()
 
         return observation, reward, terminated, truncated
@@ -314,18 +313,19 @@ class DQNLearningNode(Node):
                 print(f'\n episode {self.episode} of {args_parse.max_episodes}')
                 state = self.where_I_am(True)
                 state = torch.tensor(state, dtype=torch.float32, device=DEVICE).unsqueeze(0)
-                LOSS = 100.0
-                queue = deque()
+                loss_ep = 0.0
+                queue = deque([], maxlen=6)
                 for t in count():
                     print(f'state: {state}')
+                    angle_max_dist_state = state[0][-1]
                     action, action_status = select_action(state, self.ep_steps, self.policy_net)
                     queue.append(catergory(float(action[0].item())))
-                    if len(queue) > 6:
-                        queue.popleft()
+                    # if len(queue) > 6:
+                    #     queue.popleft()
 
                     print(f'queue: {queue}')
                     self.ep_steps += 1
-                    observation, reward, terminated, truncated = self.step(action, list(queue))
+                    observation, reward, terminated, truncated = self.step(action, list(queue), angle_max_dist_state)
                     self.CUMULATIVE_REWARD += reward
                     print(f' CUMULATIVE_REWARD: {self.CUMULATIVE_REWARD}')
                     reward = torch.tensor([reward], device=DEVICE)
@@ -339,6 +339,7 @@ class DQNLearningNode(Node):
           
                     if action_status == 'get Best Action':
                         action = torch.tensor([catergory(float(action[0].item())), ALPHA*sigmoid(float(action[1].item())), np.tanh(float(action[2].item()))*(np.pi/4.)], device=DEVICE).view(3)
+                    
                     self.memory.push(state, action, next_state, reward)    
                     state = next_state
 
@@ -348,8 +349,10 @@ class DQNLearningNode(Node):
                                    optimizer = self.optimizer,
                                    memory = self.memory,
                                    criterion = self.loss_fnc)
-                    
-                    print(f'\n\t loss: {loss} |  LOSS: {LOSS}\t\n')
+                    if loss:
+                        loss_ep += loss
+
+                    print(f'\n\t loss: {loss} | loss_ep: {loss_ep} |  LOSS_min: {self.LOSS} \t\n')
 
                     # Soft update of the target network's weights
                     # θ′ ← τ θ + (1 −τ )θ′
@@ -360,11 +363,11 @@ class DQNLearningNode(Node):
                     
                     self.target_net.load_state_dict(target_net_state_dict)
 
-                    if (loss != None) and (loss < LOSS) or (self.episode % args_parse.max_episodes_before_save == 0) :
+                    if (loss != None) and (loss < self.LOSS) or (self.episode % args_parse.max_episodes_before_save == 0) :
                         print('-'*100)
                         torch.save(self.policy_net.state_dict(), args_parse.DQN_source_dir)
                         print(f'saved!!!')
-                        LOSS = loss
+                        self.LOSS = loss
 
                     if done:### done episode
                         print('-'*100)
@@ -372,6 +375,7 @@ class DQNLearningNode(Node):
                         robotStop(self.velPub)
                         print(f" End of episode. step: {self.ep_steps}")
                         print(f' CUMULATIVE_REWARD: {self.CUMULATIVE_REWARD}')
+                        print(f' loss_ep: {loss_ep}')
                         # torch.save(self.policy_net.state_dict(), args_parse.DQN_source_dir)
                         # print(f'saved!!!')
                         break

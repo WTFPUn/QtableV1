@@ -18,3 +18,4 @@ class DQN(nn.Module):
         x = F.relu(self.layer1(x))
         x = F.relu(self.layer2(x))
         return self.Output(x) #idx 0: action_id, idx 1: LINEAR_SPEED [0, 1], idx 2: ANGULAR_SPEED[-1, 1]
+    

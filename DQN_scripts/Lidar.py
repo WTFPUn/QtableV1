@@ -28,7 +28,7 @@ def lidarScan(msgScan):
             distance = msgScan.range_min
             # For real robot - protection
             if msgScan.ranges[i] < 0.01:
-                distance = MAX_LIDAR_DISTANCE
+                distance = NEARBY_DISTANCE
         else:
             distance = msgScan.ranges[i]
 
@@ -40,6 +40,25 @@ def lidarScan(msgScan):
     
 def lidar_min(lidar):
     return min([ MAX_LIDAR_DISTANCE if isinstance(laser, str) or laser == float('inf') or laser == 'inf' else laser for laser in lidar])
+
+def lidar_max(lidar):
+    idx_max_dist = []
+    length_lidar = len(lidar) 
+    ratio = length_lidar / 360.0 
+    for idx, laser in enumerate(lidar):
+        if laser == np.max(lidar):
+            idx_max_dist.append(idx)
+
+    idx_max_dist = [ degree*ratio for degree in idx_max_dist] # type float range [0, 360]
+    idx_max_dist = [ degree - 360.0  if degree > 180.0 else degree for degree in idx_max_dist ]
+    idx_max_dist = [ degree if abs(degree) <= 90.0 else 360.0 for degree in idx_max_dist]
+    close_0 = 0.0
+    theta = 360.0
+    for degree in idx_max_dist:
+        if abs(degree) < theta:
+            close_0 = degree
+    print(f'idx_max_dist: {idx_max_dist}  {close_0} {close_0 * (np.pi/180.0)}')
+    return close_0 * (np.pi/180.0)
 
 # Discretization of lidar scan
 def defineState(lidar, 
@@ -101,14 +120,23 @@ def defineState(lidar,
     robot_prev_pose = np.array([robot_prev_pose[0], robot_prev_pose[1]])
     target_pos = np.array([target_pos[0], target_pos[1]])
 
-    # #  vector from robot to target
+    
+    #  vector from robot to target
     d_vec = target_pos - robot_pose
     #  vexor from robot to robot_prev
     v_vec = robot_pose - robot_prev_pose
 
-    angle_state = np.arccos(np.dot(d_vec, v_vec) / (np.linalg.norm(d_vec) * np.linalg.norm(v_vec)))
+    d_vec3d = np.array([d_vec[0], d_vec[1], 0])
+    v_vec3d = np.array([v_vec[0], v_vec[1], 0])
 
-    return np.array([x, x1, x2, x3, x4, x5, x6, x7, x8, dist, angle_state], dtype = np.float32)
+    if np.cross(d_vec3d, v_vec3d)[2] < 0:
+        angle_state = - np.arccos(np.dot(d_vec, v_vec) / (np.linalg.norm(d_vec) * np.linalg.norm(v_vec)))   # too much right return 0. to -pi
+    else:
+        angle_state = np.arccos(np.dot(d_vec, v_vec) / (np.linalg.norm(d_vec) * np.linalg.norm(v_vec)))  # too much left return 0. to pi
+
+    angle_max_dist_state = lidar_max(lidar)
+
+    return np.array([x, x1, x2, x3, x4, x5, x6, x7, x8, dist, angle_state, angle_max_dist_state], dtype = np.float32) 
 
 # Check - crash
 def checkCrash(lidar):
