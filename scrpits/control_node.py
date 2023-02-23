@@ -80,7 +80,8 @@ else:
     THETA_GOAL = GOAL_POSITIONS_THETA[PATH_IND]
 
 # Log file directory - Q table source
-Q_TABLE_SOURCE = DATA_PATH + '/Log_learning'
+# Q_TABLE_SOURCE = DATA_PATH + '/Log_learning'
+Q_TABLE_SOURCE = DATA_PATH + '/Log_learning_4000'
 
 class ControlNode(Node):
     def __init__(self):
@@ -274,7 +275,7 @@ class ControlNode(Node):
                     posIsSame = False
                 
                 # opportunity algorithm  if robot not in goal zone(2m) do this
-                elif ( np.min(lidar) > WANGWANG) and np.norm((x,y) - (X_GOAL, Y_GOAL)) > 2:
+                elif ( np.min(lidar) > WANGWANG) and np.linalg.norm((x,y) - (X_GOAL, Y_GOAL)) > 2:
                         max = np.argmax([lidar_x1, lidar_x2, lidar_x3, lidar_x4, lidar_x5])
                         Angle = [-math.pi, -math.pi/4, "F", math.pi/4, math.pi]
                         if max == 2:
