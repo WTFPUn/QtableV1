@@ -80,7 +80,7 @@ else:
     THETA_GOAL = GOAL_POSITIONS_THETA[PATH_IND]
 
 # Log file directory - Q table source
-Q_TABLE_SOURCE = DATA_PATH + '/Log_learning'
+Q_TABLE_SOURCE = DATA_PATH + '/Log_learning_4000'
 
 class Ward():
     def __init__(self, x, y):
@@ -349,22 +349,30 @@ class ControlNode(Node):
                 elif (( np.min(lidar) > WANGWANG) and np.linalg.norm(np.array([x,y]) - np.array([X_GOAL, Y_GOAL])) > 2 ) or self.tempCond == 3:
                         max = np.argmax([lidar_x1, lidar_x2, lidar_x3, lidar_x4, lidar_x5])
                         Angle = [math.pi, math.pi/4, "F", -math.pi/4, -math.pi]
+                        Angle2 = [math.pi/2, math.pi/8, 0, -math.pi/8, -math.pi/2]
+                        
                        
+                        stateMax = np.where(np.array( [x1, x2, x3, x4, x5]) == 2)
+                        # find delta between lidar and goal
+                        deltay = Y_GOAL - y
+                        deltax = X_GOAL - x
+                        # find angle between lidar and goal
+                        angle = np.arctan2(deltay, deltax)
+                        # find angle between lidar and goal in degree
+                        Angle3 =[Angle2[stateMax[0][i]] for i in  range(len(stateMax[0]))]
+                        # check nearest stateMax
+                        angle =  np.argmin((Angle3- angle))
+                        angle_dir_forge = Angle3[angle]*2
+                        
+
                         if self.tempCond == 3:
                             velMsg = createVelMsg(0.15,0.0)
                             self.velPub.publish(velMsg)
                             text = text + ' ==> T๋ee algorithm(forward)'
                             self.tempCond = 0
-                        
 
-
-                        elif max == 2:
-                            velMsg = createVelMsg(0.15,0.0)
-                            self.velPub.publish(velMsg)
-                            text = text + ' ==> Opportunity algorithm(rotate)'
-                            self.tempCond = 3
                         else:
-                            velMsg = createVelMsg(0.0, Angle[max])
+                            velMsg = createVelMsg(0.0, angle_dir_forge)
                             self.velPub.publish(velMsg)
                             text = text + ' ==> Opportunity algorithm(rotate)'
                             self.tempCond = 3
