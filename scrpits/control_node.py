@@ -115,6 +115,26 @@ class ControlNode(Node):
         self.wards = []
         self.inTask = False
 
+    def lidt(string):
+        lidar = [0 if x == 20 else x for x in lidar]
+        vertex_points = {}
+        for i in range(1, len(lidar)-1):
+            if lidar[i] != 0:
+                if lidar[i-1] < lidar[i] and lidar[i+1] < lidar[i]:
+                    vertex_points[i] = lidar[i]
+                elif lidar[i-1] > lidar[i] and lidar[i+1] > lidar[i]:
+                    vertex_points[i] = lidar[i]
+        num_points = len(vertex_points)
+        dic = {i*(360/len(lidar)): y for i, y in vertex_points.items()}
+        start_key = list(dic.keys())[0]
+        end_key = list(dic.keys())[-1]
+        highest_point = None
+        for key in dic.keys():
+            if start_key <= key <= end_key:
+                if highest_point is None or dic[key] > dic[highest_point]:
+                    highest_point = key
+        return highest_point
+
     def wait_for_message(
         node,
         topic: str,
@@ -327,24 +347,36 @@ class ControlNode(Node):
                 
                 # opportunity algorithm  if robot not in goal zone(2m) do this
                 elif (( np.min(lidar) > WANGWANG) and np.linalg.norm(np.array([x,y]) - np.array([X_GOAL, Y_GOAL])) > 2 ) or self.tempCond == 3:
-                        max = np.argmax([lidar_x1, lidar_x2, lidar_x3, lidar_x4, lidar_x5])
-                        Angle = [-math.pi, -math.pi/4, "F", math.pi/4, math.pi]
+                        # max = np.argmax([lidar_x1, lidar_x2, lidar_x3, lidar_x4, lidar_x5])
+                        # Angle = [-math.pi, -math.pi/4, "F", math.pi/4, math.pi]
+                        angle_dir=self.lidt(lidar)
+                        
                         if self.tempCond == 3:
                             velMsg = createVelMsg(0.15,0.0)
                             self.velPub.publish(velMsg)
-                            text = text + ' ==> Opportunity algorithm(forward)'
+                            text = text + ' ==> T๋ee algorithm(forward)'
                             self.tempCond = 0
+                        #/180*math.pi 
+                        else :
+                            if angle_dir >180 : 
+                                angle_new = angle_dir-360 
+                            else :
+                                angle_new = angle_dir
+                            text = text + ' ==> T๋ee algorithm'
+                            velMsg = createVelMsg(0.0, angle_new/180*math.pi*2)
+                            self.velPub.publish(velMsg)
 
-                        elif max == 2:
-                            velMsg = createVelMsg(0.15,0.0)
-                            self.velPub.publish(velMsg)
-                            text = text + ' ==> Opportunity algorithm(rotate)'
-                            self.tempCond = 3
-                        else:
-                            velMsg = createVelMsg(0.0, Angle[max])
-                            self.velPub.publish(velMsg)
-                            text = text + ' ==> Opportunity algorithm(rotate)'
-                            self.tempCond = 3
+
+                        # elif max == 2:
+                        #     velMsg = createVelMsg(0.15,0.0)
+                        #     self.velPub.publish(velMsg)
+                        #     text = text + ' ==> Opportunity algorithm(rotate)'
+                        #     self.tempCond = 3
+                        # else:
+                        #     velMsg = createVelMsg(0.0, Angle[max])
+                        #     self.velPub.publish(velMsg)
+                        #     text = text + ' ==> Opportunity algorithm(rotate)'
+                        #     self.tempCond = 3
                         
 
                         
