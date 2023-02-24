@@ -284,16 +284,16 @@ class ControlNode(Node):
                 if (crash or self.tempCond == 1) and not (self.inTask ) :
                     # robotStop(self.velPub)
                     if lidar_back >= 0.15 and crash:
-                        velMsg = createVelMsg(-0.15,0.0)
+                        velMsg = createVelMsg(-0.10,0.0)
                         self.velPub.publish(velMsg)
                         text = text + ' ==> Crash!  backward'
                         self.tempCond = 1
                     elif self.tempCond == 1 or crash :
                         if lidar_x1 >= lidar_x5:
-                            velMsg = createVelMsg(0.0, -math.pi/2)
+                            velMsg = createVelMsg(0.0, math.pi/2)
                             self.velPub.publish(velMsg)
                         else:
-                            velMsg = createVelMsg(0.0, math.pi/2)
+                            velMsg = createVelMsg(0.0, -math.pi/2)
                             self.velPub.publish(velMsg)
                         self.tempCond = 0
                         
@@ -301,10 +301,10 @@ class ControlNode(Node):
                 # check if robot is in ward then avoid it
                 elif any(IsInWard) and not (self.inTask):
                     if lidar_x1 >= lidar_x5:
-                        velMsg = createVelMsg(0.0, -math.pi)
+                        velMsg = createVelMsg(0.0, math.pi)
                         self.velPub.publish(velMsg)
                     else:
-                        velMsg = createVelMsg(0.0, math.pi)
+                        velMsg = createVelMsg(0.0, -math.pi)
                         self.velPub.publish(velMsg)
                     text = text + ' ==> Avoid ward'
                     status = 'Avoid ward'
@@ -328,13 +328,13 @@ class ControlNode(Node):
                             self.inTask = False
                         elif x1 > 1 or x5 > 1:
                             if lidar_x1 >= lidar_x5:
-                                velMsg = createVelMsg(0.0, -math.pi)
+                                velMsg = createVelMsg(0.0, math.pi)
                                 self.velPub.publish(velMsg)
                                 self.wards.append(Ward(x, y))
                                 print("Ward added at: ", x, y)
                                 self.inTask = True
                             else:
-                                velMsg = createVelMsg(0.0, math.pi)
+                                velMsg = createVelMsg(0.0,-math.pi)
                                 self.velPub.publish(velMsg)
                                 self.wards.append(Ward(x, y))
                                 print("Ward added at: ", x, y)
@@ -347,36 +347,39 @@ class ControlNode(Node):
                 
                 # opportunity algorithm  if robot not in goal zone(2m) do this
                 elif (( np.min(lidar) > WANGWANG) and np.linalg.norm(np.array([x,y]) - np.array([X_GOAL, Y_GOAL])) > 2 ) or self.tempCond == 3:
-                        # max = np.argmax([lidar_x1, lidar_x2, lidar_x3, lidar_x4, lidar_x5])
-                        # Angle = [-math.pi, -math.pi/4, "F", math.pi/4, math.pi]
-                        angle_dir=self.lidt(lidar)
-                        
+                        max = np.argmax([lidar_x1, lidar_x2, lidar_x3, lidar_x4, lidar_x5])
+                        Angle = [math.pi, math.pi/4, "F", -math.pi/4, -math.pi]
+                       
                         if self.tempCond == 3:
                             velMsg = createVelMsg(0.15,0.0)
                             self.velPub.publish(velMsg)
                             text = text + ' ==> T๋ee algorithm(forward)'
                             self.tempCond = 0
-                        #/180*math.pi 
-                        else :
-                            if angle_dir >180 : 
-                                angle_new = angle_dir-360 
-                            else :
-                                angle_new = angle_dir
-                            text = text + ' ==> T๋ee algorithm (angle_new)'
-                            velMsg = createVelMsg(0.0, angle_new/180*math.pi*2)
+                        
+
+
+                        elif max == 2:
+                            velMsg = createVelMsg(0.15,0.0)
                             self.velPub.publish(velMsg)
+                            text = text + ' ==> Opportunity algorithm(rotate)'
+                            self.tempCond = 3
+                        else:
+                            velMsg = createVelMsg(0.0, Angle[max])
+                            self.velPub.publish(velMsg)
+                            text = text + ' ==> Opportunity algorithm(rotate)'
+                            self.tempCond = 3
 
-
-                        # elif max == 2:
-                        #     velMsg = createVelMsg(0.15,0.0)
-                        #     self.velPub.publish(velMsg)
-                        #     text = text + ' ==> Opportunity algorithm(rotate)'
-                        #     self.tempCond = 3
-                        # else:
-                        #     velMsg = createVelMsg(0.0, Angle[max])
-                        #     self.velPub.publish(velMsg)
-                        #     text = text + ' ==> Opportunity algorithm(rotate)'
-                        #     self.tempCond = 3
+                            # angle_dir=self.lidt(lidar)
+                        
+                                # #/180*math.pi 
+                            # else :
+                            #     if angle_dir >180 : 
+                            #         angle_new = angle_dir-360 
+                            #     else :
+                            #         angle_new = angle_dir
+                            #     text = text + ' ==> T๋ee algorithm (angle_new)'
+                            #     velMsg = createVelMsg(0.0, angle_new/180*math.pi*2)
+                            #     self.velPub.publish(velMsg)
                         
 
                         
