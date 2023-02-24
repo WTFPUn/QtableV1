@@ -362,7 +362,7 @@ class ControlNode(Node):
                                 angle_new = angle_dir-360 
                             else :
                                 angle_new = angle_dir
-                            text = text + ' ==> T๋ee algorithm'
+                            text = text + ' ==> T๋ee algorithm (angle_new)'
                             velMsg = createVelMsg(0.0, angle_new/180*math.pi*2)
                             self.velPub.publish(velMsg)
 
